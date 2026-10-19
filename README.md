@@ -13,7 +13,7 @@
 
 ## 界面预览
 
-![系统数据驾驶舱 - 显卡详情](assets/screenshot.png)
+![系统数据驾驶舱 - 显卡详情](assets/shots/shot1.png)
 
 ### 更多界面
 
@@ -155,3 +155,7 @@
 ## 许可证
 
 采用 [MIT 许可证](LICENSE)，可自由使用、修改与分发。
+
+---
+
+📘 英文文档：[README.en.md](README.en.md)
