@@ -13,7 +13,7 @@
 
 ## 界面预览
 
-![系统数据驾驶舱 - 显卡详情](assets/shots/shot1.png)
+![系统数据驾驶舱 - 总览](assets/shots/shot1.png)
 
 ### 更多界面
 

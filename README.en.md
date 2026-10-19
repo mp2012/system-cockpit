@@ -13,7 +13,7 @@ A **pure front-end + lightweight local server** PC real-time performance monitor
 
 ## Screenshots
 
-![System Cockpit - GPU detail](assets/shots/shot1.png)
+![System Cockpit - Overview](assets/shots/shot1.png)
 
 ### More views
 
