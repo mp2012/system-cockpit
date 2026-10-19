@@ -15,6 +15,14 @@
 
 ![系统数据驾驶舱 - 显卡详情](assets/screenshot.png)
 
+### 更多界面
+
+| | |
+|---|---|
+| ![预览1](assets/shots/shot1.png) | ![预览2](assets/shots/shot2.png) |
+| ![预览3](assets/shots/shot3.png) | ![预览4](assets/shots/shot4.png) |
+| ![预览5](assets/shots/shot5.png) | ![预览6](assets/shots/shot6.png) |
+
 ---
 
 ## 功能特性
