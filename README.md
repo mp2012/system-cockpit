@@ -1,5 +1,10 @@
 # 系统数据驾驶舱 · System Cockpit
 
+![License](https://img.shields.io/badge/license-MIT-blue)
+![Offline](https://img.shields.io/badge/works-offline-brightgreen)
+![ECharts](https://img.shields.io/badge/charts-Apache%20ECharts-5470c6)
+![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20Linux%20%7C%20macOS-lightgrey)
+
 一个**纯前端 + 轻量本地服务**的 PC 实时性能监控面板。单屏总览 + 五个详情页签（CPU / 内存 / 磁盘 / 网络 / 显卡），数据可视化基于 ECharts。
 
 - **完全离线 / 内网可用**：所有依赖（ECharts、字体）已本地化，不依赖任何外网。
@@ -137,4 +142,4 @@
 
 ## 许可证
 
-仅供学习与个人使用。
+采用 [MIT 许可证](LICENSE)，可自由使用、修改与分发。
