@@ -1,0 +1,722 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>系统数据驾驶舱 · System Cockpit</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23050a17'/%3E%3Ccircle cx='16' cy='16' r='9' fill='none' stroke='%2322e0e6' stroke-width='2.4'/%3E%3Ccircle cx='16' cy='16' r='4' fill='%238b5cf6'/%3E%3Cpath d='M16 2v6M16 24v6M2 16h6M24 16h6' stroke='%2322e0e6' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E">
+<style>
+  /* 本地化字体：Orbitron（数字字体），CJK 回退系统字体，完全离线可用 */
+  @font-face{font-family:'Orbitron';font-style:normal;font-weight:500;font-display:swap;src:url('fonts/orbitron-latin-500-normal.woff2') format('woff2')}
+  @font-face{font-family:'Orbitron';font-style:normal;font-weight:600;font-display:swap;src:url('fonts/orbitron-latin-600-normal.woff2') format('woff2')}
+  @font-face{font-family:'Orbitron';font-style:normal;font-weight:800;font-display:swap;src:url('fonts/orbitron-latin-800-normal.woff2') format('woff2')}
+  @font-face{font-family:'Orbitron';font-style:normal;font-weight:900;font-display:swap;src:url('fonts/orbitron-latin-900-normal.woff2') format('woff2')}
+  /* ============ TOKENS ============ */
+  :root{
+    --bg0:#03050c; --bg1:#071021; --bg2:#0a1526;
+    --panel:rgba(9,20,40,.55); --panel-solid:#0a1526;
+    --line:rgba(56,189,248,.18); --line-soft:rgba(56,189,248,.10);
+    --cyan:#22e0e6; --blue:#3b82f6; --violet:#8b5cf6; --magenta:#f472b6;
+    --amber:#fbbf24; --red:#f87171; --green:#34d399;
+    --text:#d9e8f7; --dim:#6f86a6; --faint:#40556f;
+    --font-num:'Orbitron',ui-monospace,'SFMono-Regular',Menlo,Consolas,monospace;
+    --font-body:'Noto Sans SC',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{
+    font-family:var(--font-body); color:var(--text);
+    background:
+      radial-gradient(1200px 700px at 12% -10%, rgba(59,130,246,.14), transparent 60%),
+      radial-gradient(1000px 600px at 105% 8%, rgba(139,92,246,.12), transparent 55%),
+      radial-gradient(900px 700px at 50% 115%, rgba(34,224,230,.08), transparent 60%),
+      var(--bg0);
+    overflow:hidden; -webkit-font-smoothing:antialiased;
+  }
+  /* ============ 背景层 ============ */
+  .bg{position:fixed;inset:0;z-index:-2;pointer-events:none}
+  .bg .grid{
+    position:absolute;inset:-40% -10%; opacity:.5;
+    background-image:
+      linear-gradient(rgba(34,224,230,.05) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(34,224,230,.05) 1px, transparent 1px);
+    background-size:44px 44px;
+    transform:perspective(600px) rotateX(58deg) translateZ(0);
+    animation:gridmove 26s linear infinite;
+  }
+  @keyframes gridmove{from{background-position:0 0}to{background-position:0 44px}}
+  .bg .stars{position:absolute;inset:0;background-image:
+      radial-gradient(1px 1px at 12% 22%, rgba(255,255,255,.7), transparent),
+      radial-gradient(1px 1px at 34% 64%, rgba(190,225,255,.5), transparent),
+      radial-gradient(1.4px 1.4px at 56% 18%, rgba(255,255,255,.6), transparent),
+      radial-gradient(1px 1px at 72% 48%, rgba(150,220,255,.5), transparent),
+      radial-gradient(1.6px 1.6px at 86% 30%, rgba(255,255,255,.55), transparent),
+      radial-gradient(1px 1px at 22% 82%, rgba(180,220,255,.45), transparent),
+      radial-gradient(1.2px 1.2px at 66% 76%, rgba(255,255,255,.5), transparent),
+      radial-gradient(1px 1px at 92% 88%, rgba(160,210,255,.4), transparent);
+    animation:twinkle 6s ease-in-out infinite alternate; opacity:.7}
+  @keyframes twinkle{from{opacity:.45}to{opacity:.9}}
+  .scanline{position:fixed;inset:0;z-index:-1;pointer-events:none;opacity:.4;
+    background:repeating-linear-gradient(0deg, transparent 0 3px, rgba(120,200,255,.025) 3px 4px)}
+  /* ============ 启动序列 ============ */
+  .boot{position:fixed;inset:0;z-index:50;display:flex;flex-direction:column;gap:18px;align-items:center;justify-content:center;
+    background:var(--bg0);transition:opacity .6s ease, visibility .6s}
+  .boot.done{opacity:0;visibility:hidden}
+  .boot .t{font-family:var(--font-num);letter-spacing:.35em;font-size:clamp(16px,3.4vw,26px);color:var(--cyan);
+    text-shadow:0 0 18px rgba(34,224,230,.7)}
+  .boot .bar{width:min(320px,70vw);height:4px;background:rgba(56,189,248,.15);overflow:hidden;border-radius:2px}
+  .boot .bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--cyan),var(--violet));
+    box-shadow:0 0 14px rgba(34,224,230,.8);animation:load 1.1s ease forwards}
+  @keyframes load{to{width:100%}}
+  .boot .s{font-family:var(--font-num);font-size:11px;color:var(--dim);letter-spacing:.2em}
+
+  /* ============ 单屏骨架 ============ */
+  .app{height:100vh;height:100dvh;display:flex;flex-direction:column;overflow:hidden;
+    padding:clamp(6px,1vh,12px) clamp(8px,1.4vw,22px) clamp(4px,0.8vh,8px);gap:clamp(6px,1vh,10px)}
+
+  /* 顶栏：品牌 + 页签 + 状态 */
+  header.hud{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:clamp(10px,1.6vw,22px);
+    flex:0 0 auto;padding:clamp(6px,1vh,10px) 14px;border:1px solid var(--line);border-radius:12px;
+    background:linear-gradient(180deg, rgba(13,27,52,.85), rgba(8,16,32,.75));
+    box-shadow:0 0 24px rgba(34,224,230,.10) inset, 0 8px 30px rgba(0,0,0,.4);position:relative}
+  header.hud::before,header.hud::after{position:absolute;width:14px;height:14px;border-color:var(--cyan);border-style:solid;opacity:.9;content:""}
+  header.hud::before{top:-1px;left:-1px;border-width:2px 0 0 2px;border-radius:10px 0 0 0}
+  header.hud::after{bottom:-1px;right:-1px;border-width:0 2px 2px 0;border-radius:0 0 10px 0}
+  .brand{display:flex;align-items:baseline;gap:10px;flex-wrap:nowrap;min-width:0}
+  .brand .t1{font-family:var(--font-num);font-weight:800;font-size:clamp(15px,1.9vw,22px);letter-spacing:.12em;color:#eaf6ff;
+    text-shadow:0 0 16px rgba(34,224,230,.55);white-space:nowrap}
+  .brand .t1 em{font-style:normal;color:var(--cyan)}
+  .brand .t2{font-size:clamp(10px,1.2vw,12px);color:var(--dim);letter-spacing:.3em;white-space:nowrap;display:none}
+  @media(min-width:880px){.brand .t2{display:inline}}
+
+  /* 页签 */
+  .tabs{display:flex;align-items:center;gap:4px;justify-content:center;overflow-x:auto;scrollbar-width:none}
+  .tabs::-webkit-scrollbar{display:none}
+  .tab{font-family:var(--font-num);font-size:clamp(11px,1.1vw,13px);letter-spacing:.1em;color:var(--dim);
+    background:transparent;border:1px solid transparent;border-radius:8px;padding:6px clamp(8px,1vw,14px);
+    cursor:pointer;white-space:nowrap;transition:.2s;position:relative}
+  .tab:hover{color:var(--cyan);background:rgba(34,224,230,.06)}
+  .tab.active{color:#eaf6ff;border-color:var(--line);
+    background:linear-gradient(180deg,rgba(34,224,230,.14),rgba(34,224,230,.03));box-shadow:0 0 14px rgba(34,224,230,.2) inset}
+  .tab.active::after{content:"";position:absolute;left:14px;right:14px;bottom:1px;height:2px;background:var(--cyan);
+    box-shadow:0 0 8px var(--cyan);border-radius:2px}
+
+  .hud-meta{display:flex;align-items:center;gap:10px;font-family:var(--font-num);flex:0 0 auto}
+  .clock{display:inline-block;min-width:9.5ch;text-align:center;font-variant-numeric:tabular-nums;
+    font-size:clamp(13px,1.6vw,18px);color:var(--cyan);letter-spacing:.08em;text-shadow:0 0 12px rgba(34,224,230,.6);white-space:nowrap}
+  .src{font-size:10px;letter-spacing:.12em;padding:4px 8px;border-radius:6px;border:1px solid var(--line);white-space:nowrap}
+  .src.demo{color:var(--amber);border-color:rgba(251,191,36,.4)}
+  .src.live{color:var(--green);border-color:rgba(52,211,153,.45)}
+  .src.live i,.src.demo i{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:5px;vertical-align:1px}
+  .src.live i{background:var(--green);box-shadow:0 0 8px var(--green);animation:blink 1.4s infinite}
+  .src.demo i{background:var(--amber);box-shadow:0 0 8px var(--amber)}
+  @keyframes blink{50%{opacity:.25}}
+  .btn{font-family:var(--font-num);font-size:10px;letter-spacing:.14em;color:var(--dim);background:transparent;
+    border:1px solid var(--line-soft);border-radius:6px;padding:5px 10px;cursor:pointer;transition:.2s;white-space:nowrap;
+    min-width:70px;text-align:center}
+  .btn:hover{color:var(--cyan);border-color:var(--cyan);box-shadow:0 0 12px rgba(34,224,230,.25)}
+
+  /* 顶部状态条 */
+  .strip{display:grid;grid-template-columns:repeat(6,1fr);gap:clamp(5px,0.7vw,8px);flex:0 0 auto}
+  .chip{position:relative;padding:clamp(5px,0.9vh,9px) 10px;border:1px solid var(--line-soft);border-radius:9px;
+    background:linear-gradient(180deg, rgba(13,26,50,.6), rgba(8,16,32,.5));min-width:0}
+  .chip .k{font-size:10px;color:var(--dim);letter-spacing:.14em;display:flex;align-items:center;gap:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .chip .k svg{width:12px;height:12px;stroke:var(--cyan);fill:none;stroke-width:1.7;flex:0 0 auto}
+  .chip .v{font-family:var(--font-num);font-size:clamp(13px,1.5vw,18px);color:#eaf6ff;margin-top:3px;
+    text-shadow:0 0 10px rgba(34,224,230,.35);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .chip .v small{font-family:var(--font-body);color:var(--dim);font-size:10px;margin-left:3px}
+
+  /* 主舞台（占满剩余高度，不滚动） */
+  .stage{flex:1 1 auto;min-height:0;position:relative;overflow:hidden}
+  .view{display:none;height:100%;min-height:0}
+  .view.active{display:block}
+  .view.active.overview{display:grid}
+  .view.active.placeholder{display:flex;align-items:center;justify-content:center}
+  .view.active.focus{display:grid;gap:clamp(6px,0.9vw,10px);height:100%;
+    grid-template-columns:repeat(2,1fr);grid-auto-rows:1fr}
+  .view.focus .panel{min-height:0}
+  .info-list{flex:1;min-height:0;overflow:auto;display:flex;flex-direction:column;justify-content:space-around}
+  .info-row{display:flex;justify-content:space-between;align-items:baseline;padding:6px 6px;border-bottom:1px solid rgba(56,189,248,.08)}
+  .info-row:last-child{border-bottom:none}
+  .info-row .k{font-size:11px;color:var(--dim);letter-spacing:.12em}
+  .info-row .v{font-family:var(--font-num);font-size:clamp(13px,1.4vw,17px);color:#eaf6ff;text-shadow:0 0 10px rgba(34,224,230,.3)}
+  .info-row .v small{font-size:10px;color:var(--dim);margin-left:3px}
+
+  /* 总览网格：上排仪表 + 左下趋势 + 右下信息 */
+  .overview{
+    grid-template-columns:1.95fr 1fr;
+    grid-template-rows:auto minmax(0,1fr);
+    gap:clamp(6px,0.9vw,10px);
+  }
+  .gauges{grid-column:1/-1;display:grid;grid-template-columns:repeat(4,1fr);gap:clamp(6px,0.9vw,10px);min-height:0}
+  .left{grid-column:1;display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;gap:clamp(6px,0.9vw,10px);min-height:0}
+  .right{grid-column:2;display:grid;grid-template-rows:1fr 1fr 1.1fr;gap:clamp(6px,0.9vw,10px);min-height:0}
+
+  /* 面板通用 */
+  .panel{position:relative;border:1px solid var(--line);border-radius:12px;background:
+      linear-gradient(180deg, rgba(10,22,42,.72), rgba(7,15,30,.72));
+      padding:clamp(6px,1vh,10px) clamp(6px,1vw,10px) clamp(5px,0.8vh,8px);
+      box-shadow:0 10px 34px rgba(0,0,0,.4), 0 0 0 1px rgba(34,224,230,.04) inset;
+      display:flex;flex-direction:column;min-height:0;min-width:0;overflow:hidden}
+  .panel .corner{position:absolute;width:12px;height:12px;border-color:var(--cyan);border-style:solid;opacity:.85}
+  .panel .corner.tl{top:0;left:0;border-width:2px 0 0 2px;border-radius:8px 0 0 0}
+  .panel .corner.tr{top:0;right:0;border-width:2px 2px 0 0;border-radius:0 8px 0 0}
+  .panel .corner.bl{bottom:0;left:0;border-width:0 0 2px 2px;border-radius:0 0 0 8px}
+  .panel .corner.br{bottom:0;right:0;border-width:0 2px 2px 0;border-radius:0 0 8px 0}
+  .panel h3{display:flex;align-items:center;gap:7px;font-size:11px;color:var(--dim);letter-spacing:.18em;font-weight:500;
+    margin:1px 4px 5px;flex:0 0 auto}
+  .panel h3 .dot{width:6px;height:6px;border-radius:50%;background:var(--cyan);box-shadow:0 0 8px var(--cyan)}
+  .panel h3 svg{width:13px;height:13px;stroke:var(--cyan);fill:none;stroke-width:1.7;flex:0 0 auto}
+
+  /* 仪表盘卡片 */
+  .gauge-card{text-align:center}
+  .gauge-wrap{position:relative;height:clamp(96px,14vh,168px);width:100%;flex:none}
+  .gauge-card .chart-box{width:100%;height:100%}
+  .gauge-card .gval{position:absolute;left:50%;top:56%;transform:translate(-50%,-50%);
+    font-family:var(--font-num);font-weight:800;font-size:clamp(18px,2.3vw,30px);color:#eaf6ff;
+    text-shadow:0 0 18px rgba(34,224,230,.55);pointer-events:none;white-space:nowrap;line-height:1}
+  .gauge-card .gval small{position:absolute;left:100%;bottom:0;margin-left:2px;
+    font-family:var(--font-body);font-size:11px;color:var(--dim);font-weight:400}
+  .gauge-card .gsub{margin-top:3px;font-family:var(--font-num);font-size:10px;color:var(--dim);letter-spacing:.14em;flex:0 0 auto}
+
+  /* 图表容器（自适应填满面板） */
+  .chart-box{width:100%;flex:1;min-height:0}
+
+  /* 进程表 */
+  .proc-wrap{flex:1;min-height:0;overflow:hidden;display:flex;flex-direction:column}
+  table.proc{width:100%;border-collapse:collapse;font-size:10.5px}
+  table.proc th{font-family:var(--font-num);font-size:8.5px;letter-spacing:.12em;color:var(--dim);text-align:left;
+    padding:2px 6px;border-bottom:1px solid var(--line-soft);font-weight:500}
+  table.proc td{padding:2px 6px;border-bottom:1px solid rgba(56,189,248,.06);color:#cfe0f2;line-height:1.5}
+  table.proc td.num{font-family:var(--font-num);text-align:right}
+  table.proc .pname{max-width:90px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .bar-mini{height:4px;border-radius:3px;background:rgba(56,189,248,.12);overflow:hidden;margin-top:3px}
+  .bar-mini i{display:block;height:100%;background:linear-gradient(90deg,var(--cyan),var(--violet));width:0}
+
+  /* 页脚 */
+  .foot{flex:0 0 auto;display:flex;flex-wrap:wrap;gap:4px 16px;justify-content:space-between;align-items:center;
+    font-family:var(--font-num);font-size:9px;color:var(--faint);letter-spacing:.12em;
+    border-top:1px solid var(--line-soft);padding-top:6px}
+  .foot .live-hint{color:var(--dim)}
+
+  /* 预留页签：建设中占位 */
+  .ph-card{text-align:center;padding:24px 30px;border:1px dashed rgba(56,189,248,.25);border-radius:16px;
+    background:rgba(10,22,42,.35);max-width:min(560px,86vw)}
+  .ph-card .ph-ico{width:54px;height:54px;margin:0 auto 14px;border-radius:14px;display:flex;align-items:center;justify-content:center;
+    border:1px solid var(--line);background:linear-gradient(180deg,rgba(34,224,230,.12),rgba(139,92,246,.06));
+    box-shadow:0 0 20px rgba(34,224,230,.18) inset}
+  .ph-card .ph-ico svg{width:28px;height:28px;stroke:var(--cyan);fill:none;stroke-width:1.6}
+  .ph-card h2{font-family:var(--font-num);font-size:clamp(16px,2vw,22px);color:#eaf6ff;letter-spacing:.08em;margin-bottom:10px;
+    text-shadow:0 0 14px rgba(34,224,230,.4)}
+  .ph-card p{font-size:11px;color:var(--dim);letter-spacing:.1em;margin-bottom:8px}
+  .ph-card ul{list-style:none;display:inline-block;text-align:left;margin:0 auto 14px}
+  .ph-card li{font-size:12px;color:var(--text);padding:4px 0 4px 18px;position:relative}
+  .ph-card li::before{content:"";position:absolute;left:0;top:11px;width:6px;height:6px;border-radius:50%;
+    background:var(--cyan);box-shadow:0 0 8px var(--cyan)}
+  .ph-tag{display:inline-block;font-family:var(--font-num);font-size:10px;letter-spacing:.2em;color:var(--amber);
+    border:1px solid rgba(251,191,36,.4);border-radius:20px;padding:5px 14px}
+
+  /* toast */
+  .toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(20px);z-index:60;
+    background:rgba(6,12,24,.92);border:1px solid var(--line);color:var(--text);border-radius:10px;
+    padding:10px 16px;font-size:12px;opacity:0;transition:.3s;pointer-events:none;box-shadow:0 10px 30px rgba(0,0,0,.5)}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+  .toast b{color:var(--cyan);font-family:var(--font-num);font-weight:600}
+
+  /* 矮屏适配：压缩内边距，避免溢出 */
+  @media (max-height:720px){
+    .chip .v{font-size:14px}
+    .panel h3{font-size:10px;margin-bottom:3px}
+    .gauge-card .gval{font-size:21px}
+  }
+  /* 窄屏回退：允许滚动（大屏仍单屏不滚） */
+  @media (max-width:980px){
+    body{overflow:auto}
+    .app{height:auto;min-height:100vh}
+    .stage{overflow:visible}
+    .overview{grid-template-columns:1fr;grid-template-rows:none}
+    .gauges{grid-template-columns:repeat(2,1fr)}
+    .left{grid-column:1;grid-template-columns:1fr}
+    .right{grid-column:1;grid-template-rows:none}
+    .panel{min-height:200px}
+    .gauge-card .chart-box{height:150px}
+    .view.active.focus{grid-template-columns:1fr}
+  }
+  @media (prefers-reduced-motion: reduce){
+    .bg .grid,.bg .stars,.src.live i{animation:none}
+    .boot .bar i{animation-duration:.4s}
+  }
+</style>
+</head>
+<body>
+  <div class="bg" aria-hidden="true"><div class="grid"></div><div class="stars"></div></div>
+  <div class="scanline" aria-hidden="true"></div>
+
+  <div class="boot" id="boot" aria-hidden="true">
+    <div class="t">SYSTEM COCKPIT</div>
+    <div class="bar"><i></i></div>
+    <div class="s" id="bootS">正在初始化引擎…</div>
+  </div>
+
+  <div class="app">
+    <header class="hud">
+      <div class="brand">
+        <div class="t1">SYS<em>CORE</em></div>
+        <div class="t2">系统数据驾驶舱</div>
+      </div>
+
+      <nav class="tabs" id="tabs">
+        <button class="tab active" data-tab="overview">总览</button>
+        <button class="tab" data-tab="cpu">CPU</button>
+        <button class="tab" data-tab="mem">内存</button>
+        <button class="tab" data-tab="disk">磁盘</button>
+        <button class="tab" data-tab="net">网络</button>
+        <button class="tab" data-tab="gpu">显卡</button>
+      </nav>
+
+      <div class="hud-meta">
+        <span class="src demo" id="srcTag"><i></i><span id="srcTxt">演示数据</span></span>
+        <span class="clock" id="clock">--:--:--</span>
+        <button class="btn" id="pauseBtn">PAUSE</button>
+        <button class="btn" id="fsBtn">全屏</button>
+      </div>
+    </header>
+
+    <section class="strip" id="strip"></section>
+
+    <main class="stage" id="stage">
+      <div class="view active overview" data-view="overview">
+        <section class="gauges">
+          <div class="panel gauge-card"><div class="corner tl"></div><div class="corner tr"></div><div class="corner bl"></div><div class="corner br"></div><h3><svg viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="2"/><path d="M9 1v3M15 1v3M9 20v3M15 20v3M1 9h3M1 15h3M20 9h3M20 15h3"/><rect x="9.5" y="9.5" width="5" height="5" rx="1"/></svg><span class="dot"></span>CPU 使用率</h3><div class="gauge-wrap"><div class="chart-box" id="gCpu"></div><div class="gval" id="gvCpu">0<small>%</small></div></div><div class="gsub" id="gsCpu">温度 0.0°</div></div>
+          <div class="panel gauge-card"><div class="corner tl"></div><div class="corner tr"></div><div class="corner bl"></div><div class="corner br"></div><h3><svg viewBox="0 0 24 24"><rect x="3" y="7" width="18" height="10" rx="2"/><path d="M7 7v10M11 7v10M15 7v10M19 7v10"/></svg><span class="dot"></span>内存使用率</h3><div class="gauge-wrap"><div class="chart-box" id="gMem"></div><div class="gval" id="gvMem">0<small>%</small></div></div><div class="gsub" id="gsMem">0 / 0 GB</div></div>
+          <div class="panel gauge-card"><div class="corner tl"></div><div class="corner tr"></div><div class="corner bl"></div><div class="corner br"></div><h3><svg viewBox="0 0 24 24"><path d="M5 4h11l3 3v13H5z"/><path d="M8 4v5h7V4M8 20v-6h8v6"/></svg><span class="dot"></span>磁盘负载</h3><div class="gauge-wrap"><div class="chart-box" id="gDisk"></div><div class="gval" id="gvDisk">0<small>%</small></div></div><div class="gsub" id="gsDisk">R 0 · W 0</div></div>
+          <div class="panel gauge-card"><div class="corner tl"></div><div class="corner tr"></div><div class="corner bl"></div><div class="corner br"></div><h3><svg viewBox="0 0 24 24"><path d="M2 9a14 14 0 0 1 20 0M5 13a9 9 0 0 1 14 0M8 17a4 4 0 0 1 8 0"/><circle cx="12" cy="20" r="1"/></svg><span class="dot"></span>网络吞吐</h3><div class="gauge-wrap"><div class="chart-box" id="gNet"></div><div class="gval" id="gvNet">0<small>M</small></div></div><div class="gsub" id="gsNet">↓ 0 / ↑ 0</div></div>
+        </section>
+
+        <section class="left">
+          <div class="panel"><div class="corner tl"></div><div class="corner tr"></div><div class="corner bl"></div><div class="corner br"></div><h3><span class="dot"></span>CPU 负载趋势</h3><div class="chart-box" id="cCpu"></div></div>
+          <div class="panel"><div class="corner tl"></div><div class="corner tr"></div><div class="corner bl"></div><div class="corner br"></div><h3><span class="dot"></span>内存占用趋势</h3><div class="chart-box" id="cMem"></div></div>
+          <div class="panel"><div class="corner tl"></div><div class="corner tr"></div><div class="corner bl"></div><div class="corner br"></div><h3><span class="dot"></span>网络吞吐趋势</h3><div class="chart-box" id="cNet"></div></div>
+          <div class="panel"><div class="corner tl"></div><div class="corner tr"></div><div class="corner bl"></div><div class="corner br"></div><h3><span class="dot"></span>磁盘 I/O 趋势</h3><div class="chart-box" id="cDisk"></div></div>
+        </section>
+
+        <section class="right">
+          <div class="panel"><div class="corner tl"></div><div class="corner tr"></div><div class="corner bl"></div><div class="corner br"></div><h3><span class="dot"></span>子系统健康度</h3><div class="chart-box" id="radar"></div></div>
+          <div class="panel"><div class="corner tl"></div><div class="corner tr"></div><div class="corner bl"></div><div class="corner br"></div><h3><span class="dot"></span>TOP 进程 (CPU)</h3><div class="proc-wrap"><table class="proc" id="procTab"><thead><tr><th>进程</th><th>CPU%</th><th>内存</th></tr></thead><tbody></tbody></table></div></div>
+          <div class="panel"><div class="corner tl"></div><div class="corner tr"></div><div class="corner bl"></div><div class="corner br"></div><h3><span class="dot"></span>系统负载 (各核心)</h3><div class="chart-box" id="cLoad"></div></div>
+        </section>
+      </div>
+      <!-- 硬件页签占位视图由 JS 注入 -->
+    </main>
+
+    <footer class="foot">
+      <span>© SYSTEM COCKPIT · 本地数据 · 安全运行</span>
+      <span class="live-hint" id="footHint">提示：运行 live_data_server.py 可接入真实系统数据</span>
+    </footer>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script src="echarts.min.js"></script>
+  <script>if(typeof echarts==='undefined'){document.write('<script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"><\/script>');}</script>
+  <script>
+  (function(){
+    'use strict';
+    var $=function(id){return document.getElementById(id);};
+    var S={mode:'demo',paused:false,hist:{cpu:[],mem:[],netIn:[],netOut:[],diskR:[],diskW:[],load:[],core:[],temp:[],gpuUtil:[],gpuTemp:[]},cur:{},N:90};
+    var API=(location.protocol.indexOf('http')===0)?'./api/stats':'http://127.0.0.1:8765/api/stats';
+    var IV=2000;
+
+    /* ---------- 工具 ---------- */
+    function pad(n){return (n<10?'0':'')+n;}
+    function fmtUptime(sec){sec=Math.max(0,sec|0);var d=sec/86400|0,h=sec%86400/3600|0,m=sec%3600/60|0;if(d>0)return d+'d '+h+'h';if(h>0)return h+'h '+m+'m';return m+'m '+sec%60+'s';}
+    function lvl(v){if(v<60)return '#22e0e6';if(v<85)return '#fbbf24';return '#f87171';}
+    function grad(color){var g=new echarts.graphic.LinearGradient(0,0,0,1,[{offset:0,color:color},{offset:1,color:color+'33'}]);return g;}
+    function toast(html){var t=$('toast');t.innerHTML=html;t.classList.add('show');clearTimeout(t._k);t._k=setTimeout(function(){t.classList.remove('show');},3200);}
+
+    /* ---------- 演示数据模拟 ---------- */
+    function rnd(a,b){return a+Math.random()*(b-a);}
+    function walk(v,min,max,step){v+=rnd(-step,step);v=Math.max(min,Math.min(max,v));return v;}
+    var D={cpu:18,mem:42,disk:32,load:1.2,netIn:3.4,netOut:0.6,diskR:12,diskW:4,temp:42,cores:8,cpuCore:[],up:0,gpu:{util:14,memUsedMb:1500,memTotalMb:8192,temp:46,clockMHz:210,fan:32,powerW:28,name:'NVIDIA GeForce RTX 4060'}};
+    function seedDemo(){
+      D.cores=navigator.hardwareConcurrency||8;D.cpuCore=[];
+      for(var i=0;i<D.cores;i++)D.cpuCore.push(20+Math.random()*15);
+      D.procs=140+Math.random()*40|0;
+    }
+    function stepDemo(){
+      var spike=Math.random()<0.06;
+      D.cpu=walk(D.cpu,3,97,spike?14:3.4);D.temp=36+D.cpu*0.42+Math.random()*2;
+      D.mem=walk(D.mem,28,80,0.5);D.disk=walk(D.disk,15,70,0.7);
+      D.netIn=walk(D.netIn,0.4,40,2.2);D.netOut=walk(D.netOut,0.1,12,0.8);
+      D.diskR=walk(D.diskR,0,120,8);D.diskW=walk(D.diskW,0,60,5);
+      D.load=(D.cpu/100)*D.cores*0.8+0.4;
+      D.up+=2;D.procs=Math.max(80,D.procs+(Math.random()<0.1?Math.round(rnd(-6,6)):0));
+      for(var i=0;i<D.cores;i++)D.cpuCore[i]=walk(D.cpuCore[i],2,100,4.5);
+    }
+    function stepGpu(){var g=D.gpu;
+      g.util=walk(g.util,2,99,5);
+      g.temp=34+g.util*0.45+rnd(-1.5,1.5);
+      g.clockMHz=walk(g.clockMHz,120,270,18);
+      g.memUsedMb=walk(g.memUsedMb,800,Math.min(D.gpu.memTotalMb-200,7900),120);
+      g.fan=Math.max(20,Math.min(100,g.temp*1.6+rnd(-4,4)));
+      g.powerW=Math.max(8,g.util*0.45+rnd(-3,3));
+    }
+    function gpuData(){stepGpu();var g=D.gpu;return {name:g.name,util:+g.util.toFixed(1),
+      memUsedMb:Math.round(g.memUsedMb),memTotalMb:g.memTotalMb,temp:+g.temp.toFixed(1),
+      clockMHz:Math.round(g.clockMHz),fan:Math.round(g.fan),powerW:+g.powerW.toFixed(1)};}
+    function demoData(){
+      stepDemo();
+      return {hostname:'LOCAL-WORKSTATION',uptime:D.up,cores:D.cores,load:+D.load.toFixed(2),
+        cpu:+D.cpu.toFixed(1),mem:+D.mem.toFixed(1),memUsedGb:+(D.mem/100*32).toFixed(1),memTotalGb:32,
+        disk:+D.disk.toFixed(1),diskR:+D.diskR.toFixed(1),diskW:+D.diskW.toFixed(1),
+        netRx:+D.netIn.toFixed(1),netTx:+D.netOut.toFixed(1),temp:+D.temp.toFixed(1),procs:D.procs,
+        perCpu:D.cpuCore.map(function(v){return +v.toFixed(1);}),
+        topProc:[{name:'chrome',cpu:18.2,memMb:1420},{name:'node',cpu:9.6,memMb:860},{name:'code',cpu:6.4,memMb:1120},{name:'python3',cpu:4.1,memMb:310},{name:'sshd',cpu:1.2,memMb:44}],
+        gpu:{name:D.gpu.name,util:+D.gpu.util.toFixed(1),memUsedMb:Math.round(D.gpu.memUsedMb),memTotalMb:D.gpu.memTotalMb,temp:+D.gpu.temp.toFixed(1),clockMHz:Math.round(D.gpu.clockMHz),fan:Math.round(D.gpu.fan),powerW:+D.gpu.powerW.toFixed(1)}};
+    }
+
+    /* ---------- 实时桥接 ---------- */
+    function tryLive(){
+      if(!('fetch'in window))return;
+      fetch(API,{cache:'no-store'}).then(function(r){if(!r.ok)throw 0;return r.json();}).then(function(d){
+        S.mode='live';S.cur=d;setLiveUI(true);
+      }).catch(function(){S.mode='demo';setLiveUI(false);});
+    }
+    function setLiveUI(on){
+      var tag=$('srcTag'),txt=$('srcTxt');
+      if(on){tag.className='src live';txt.textContent='实时数据';$('footHint').textContent='已接入 live_data_server.py · 数据来自本机';}
+      else if(tag.className.indexOf('live')>=0){tag.className='src demo';txt.textContent='演示数据';$('footHint').textContent='实时服务未连接，已切换到演示数据 · 运行 live_data_server.py 可接入真实数据';toast('实时数据服务未连接，已切换为<b>演示数据</b>');}
+    }
+
+    /* ---------- 状态条 ---------- */
+    var ICON={'host':'<svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M7 20h10M12 16v4"/></svg>',
+      'up':'<svg viewBox="0 0 24 24"><path d="M13 2 3 14h7v8l10-12h-7z"/></svg>',
+      'core':'<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4M5 5l3 3M16 16l3 3M19 5l-3 3M8 16l-3 3"/></svg>',
+      'load':'<svg viewBox="0 0 24 24"><path d="M3 17h4v4H3zM10 9h4v12h-4zM17 3h4v18h-4z"/></svg>',
+      'temp':'<svg viewBox="0 0 24 24"><path d="M10 4a2 2 0 0 1 4 0v9.5a5 5 0 1 1-4 0z"/><path d="M12 9v6"/></svg>',
+      'proc':'<svg viewBox="0 0 24 24"><path d="M12 2v6m0 8v6M2 12h6m8 0h6"/><circle cx="12" cy="12" r="3"/></svg>'};
+    function chip(k,label,val,unit){
+      return '<div class="chip"><div class="k">'+ICON[k]+label+'</div><div class="v">'+val+(unit?'<small>'+unit+'</small>':'')+'</div></div>';
+    }
+    function renderStrip(d){
+      var cpuLvl=lvl(d.cpu);
+      $('strip').innerHTML=
+        chip('host','主机',d.hostname)+
+        chip('up','运行时长',fmtUptime(d.uptime))+
+        chip('core','逻辑核心',d.cores)+
+        chip('load','系统负载',d.load.toFixed(2))+
+        '<div class="chip"><div class="k">'+ICON.temp+'温度</div><div class="v" style="color:'+lvl(d.temp-40)+'">'+d.temp.toFixed(1)+'<small>°C</small></div></div>'+
+        chip('proc','进程数',d.procs);
+    }
+
+    /* ---------- ECharts 初始化 ---------- */
+    var charts={},GCOL={cpu:'#22e0e6',mem:'#3b82f6',disk:'#34d399',net:'#8b5cf6'};
+    function gaugeEl(){return {type:'gauge',startAngle:215,endAngle:-35,min:0,max:100,radius:'92%',center:['50%','56%'],
+      pointer:{show:false},
+      progress:{show:true,width:9,roundCap:true,itemStyle:{shadowBlur:12}},
+      axisLine:{lineStyle:{width:9,color:[[1,'rgba(56,189,248,.12)']]}},
+      axisTick:{show:false},splitLine:{show:false},axisLabel:{show:false},
+      anchor:{show:false},
+      detail:{show:false},data:[{value:0}]};}
+    function initCharts(){
+      if(typeof echarts==='undefined'){document.getElementById('bootS').textContent='图表引擎加载失败，仅显示数值';return;}
+      ['gCpu','gMem','gDisk','gNet'].forEach(function(id){
+        var c=echarts.init($(id));c.setOption({series:[gaugeEl()]});charts[id]=c;
+      });
+      ['cCpu','cMem','cNet','cDisk','radar','cLoad'].forEach(function(id){
+        var c=echarts.init($(id));charts[id]=c;
+      });
+      setTrendOption('cCpu',['#22e0e6'],['cpu']);
+      setTrendOption('cMem',['#3b82f6'],['mem']);
+      setTrendOption('cNet',['#8b5cf6','#f472b6'],['netIn','netOut']);
+      setTrendOption('cDisk',['#34d399','#fbbf24'],['diskR','diskW']);
+      setRadarOption(); setLoadOption();
+      ['fCpuCores','fCpuTrend','fCpuHeat','fCpuTop','fMemTrend','fMemPie','fMemTop','fDiskGauge','fDiskRW','fDiskBars','fNetThr','fNetPie','fNetBars','fGpuUtil','fGpuMem','fGpuTrend'].forEach(function(id){
+        var c=echarts.init($(id));charts[id]=c;
+      });
+      initFocusCharts();
+    }
+    function baseGrid(){return {left:6,right:8,top:22,bottom:2,containLabel:true};}
+    function setTrendOption(id,colors,keys){
+      var c=charts[id],opt={
+        grid:baseGrid(),
+        tooltip:{trigger:'axis',confine:true,backgroundColor:'rgba(6,12,24,.92)',borderColor:'rgba(56,189,248,.3)',textStyle:{color:'#d9e8f7',fontSize:11}},
+        xAxis:{type:'category',boundaryGap:false,data:[],axisLine:{lineStyle:{color:'rgba(56,189,248,.15)'}},axisTick:{show:false},
+          axisLabel:{color:'#40556f',fontSize:9,interval:Math.max(5,Math.floor(S.N/6))}},
+        yAxis:{type:'value',scale:true,splitLine:{lineStyle:{color:'rgba(56,189,248,.07)'}},axisLabel:{color:'#40556f',fontSize:9}},
+        series:keys.map(function(k,i){return {name:k,type:'line',smooth:true,symbol:'none',animation:false,
+          lineStyle:{width:2,color:colors[i],shadowBlur:10,shadowColor:colors[i]},
+          itemStyle:{color:colors[i]},areaStyle:{color:grad(colors[i])},data:[]};})
+      };
+      c.setOption(opt);c._keys=keys;c._colors=colors;
+    }
+    function setRadarOption(){
+      charts['radar'].setOption({
+        radar:{indicator:[{name:'CPU',max:100},{name:'内存',max:100},{name:'磁盘',max:100},{name:'网络',max:100},{name:'温度',max:100},{name:'负载',max:100}],
+          radius:'56%',center:['50%','52%'],
+          axisName:{color:'#6f86a6',fontSize:9},splitArea:{areaStyle:{color:['rgba(34,224,230,.02)','rgba(34,224,230,.05)']}},
+          splitLine:{lineStyle:{color:'rgba(56,189,248,.12)'}},axisLine:{lineStyle:{color:'rgba(56,189,248,.12)'}}},
+        series:[{type:'radar',symbol:'none',lineStyle:{color:'#8b5cf6',width:2,shadowBlur:12,shadowColor:'#8b5cf6'},
+          areaStyle:{color:'rgba(139,92,246,.28)'},data:[{value:[0,0,0,0,0,0],name:'健康度'}]}]
+      });
+    }
+    function setLoadOption(){
+      charts['cLoad'].setOption({
+        grid:baseGrid(),
+        xAxis:{type:'category',data:[],axisLine:{lineStyle:{color:'rgba(56,189,248,.15)'}},axisTick:{show:false},axisLabel:{color:'#40556f',fontSize:8,interval:0,rotate:0}},
+        yAxis:{type:'value',max:100,splitLine:{lineStyle:{color:'rgba(56,189,248,.07)'}},axisLabel:{color:'#40556f',fontSize:9,formatter:'{value}%'}},
+        tooltip:{trigger:'axis',confine:true,backgroundColor:'rgba(6,12,24,.92)',borderColor:'rgba(56,189,248,.3)',textStyle:{color:'#d9e8f7',fontSize:11}},
+        series:[{type:'bar',data:[],barWidth:'52%',animation:false,
+          itemStyle:{color:function(p){return lvl(p.value);},borderRadius:[3,3,0,0],shadowBlur:8,shadowColor:'rgba(34,224,230,.4)'}}]
+      });
+    }
+
+    /* ---------- 焦点页签图表配置 ---------- */
+    function lineOpt(keys,colors,names,unit){
+      return {grid:baseGrid(),
+        tooltip:{trigger:'axis',confine:true,backgroundColor:'rgba(6,12,24,.92)',borderColor:'rgba(56,189,248,.3)',textStyle:{color:'#d9e8f7',fontSize:11}},
+        xAxis:{type:'category',boundaryGap:false,data:[],axisLine:{lineStyle:{color:'rgba(56,189,248,.15)'}},axisTick:{show:false},axisLabel:{color:'#40556f',fontSize:9,interval:Math.max(5,Math.floor(S.N/6))}},
+        yAxis:{type:'value',scale:true,splitLine:{lineStyle:{color:'rgba(56,189,248,.07)'}},axisLabel:{color:'#40556f',fontSize:9,formatter:'{value}'+(unit||'')}},
+        series:keys.map(function(k,i){return {name:(names?names[i]:k),type:'line',smooth:true,symbol:'none',animation:false,
+          lineStyle:{width:2,color:colors[i],shadowBlur:10,shadowColor:colors[i]},itemStyle:{color:colors[i]},areaStyle:{color:grad(colors[i])},data:[]};})
+      };
+    }
+    function setLine(id,keys,colors,names,unit){if(!charts[id])return;charts[id].setOption(lineOpt(keys,colors,names,unit));charts[id]._keys=keys;charts[id]._colors=colors;}
+    function barH(id,color,unit){
+      return {grid:{left:8,right:30,top:10,bottom:6,containLabel:true},
+        tooltip:{trigger:'axis',confine:true,backgroundColor:'rgba(6,12,24,.92)',borderColor:'rgba(56,189,248,.3)',textStyle:{color:'#d9e8f7',fontSize:11}},
+        xAxis:{type:'value',max:function(v){return Math.max(10,Math.ceil(v.max/10)*10);},splitLine:{lineStyle:{color:'rgba(56,189,248,.07)'}},axisLabel:{color:'#40556f',fontSize:9,formatter:'{value}'+(unit||'')}},
+        yAxis:{type:'category',data:[],axisLine:{lineStyle:{color:'rgba(56,189,248,.15)'}},axisTick:{show:false},axisLabel:{color:'#6f86a6',fontSize:9}},
+        series:[{type:'bar',data:[],barWidth:'55%',itemStyle:{color:color,borderRadius:[0,3,3,0]}}]};
+    }
+    function gaugeOpt(){var g=gaugeEl();g.detail={show:true,offsetCenter:[0,'4%'],fontFamily:'Orbitron',fontSize:20,color:'#eaf6ff',formatter:'{value}%'};return g;}
+    function initFocusCharts(){
+      setLine('fCpuTrend',['cpu'],['#22e0e6'],['CPU'],'%');
+      setLine('fMemTrend',['mem'],['#3b82f6'],['内存'],'%');
+      setLine('fDiskRW',['diskR','diskW'],['#34d399','#fbbf24'],['读取','写入'],'MB');
+      setLine('fNetThr',['netIn','netOut'],['#8b5cf6','#f472b6'],['下行','上行'],'M');
+      charts.fCpuCores.setOption(barH('fCpuCores','#22e0e6','%'));
+      charts.fCpuTop.setOption(barH('fCpuTop','#8b5cf6','%'));
+      charts.fMemTop.setOption(barH('fMemTop','#8b5cf6','M'));
+      charts.fDiskGauge.setOption({series:[gaugeOpt()]});
+      charts.fDiskBars.setOption({grid:baseGrid(),
+        xAxis:{type:'category',data:['读取','写入'],axisLine:{lineStyle:{color:'rgba(56,189,248,.15)'}},axisTick:{show:false},axisLabel:{color:'#6f86a6',fontSize:10}},
+        yAxis:{type:'value',splitLine:{lineStyle:{color:'rgba(56,189,248,.07)'}},axisLabel:{color:'#40556f',fontSize:9,formatter:'{value}'}},
+        series:[{type:'bar',data:[],barWidth:'42%',itemStyle:{color:function(p){return p.dataIndex===0?'#34d399':'#fbbf24';},borderRadius:[3,3,0,0]}}]});
+      charts.fNetBars.setOption({grid:baseGrid(),
+        xAxis:{type:'category',data:['下行','上行'],axisLine:{lineStyle:{color:'rgba(56,189,248,.15)'}},axisTick:{show:false},axisLabel:{color:'#6f86a6',fontSize:10}},
+        yAxis:{type:'value',splitLine:{lineStyle:{color:'rgba(56,189,248,.07)'}},axisLabel:{color:'#40556f',fontSize:9,formatter:'{value}'}},
+        series:[{type:'bar',data:[],barWidth:'42%',itemStyle:{color:function(p){return p.dataIndex===0?'#8b5cf6':'#f472b6';},borderRadius:[3,3,0,0]}}]});
+      charts.fMemPie.setOption({tooltip:{trigger:'item',confine:true,backgroundColor:'rgba(6,12,24,.92)',borderColor:'rgba(56,189,248,.3)',textStyle:{color:'#d9e8f7',fontSize:11}},
+        legend:{bottom:0,textStyle:{color:'#6f86a6',fontSize:10},itemWidth:10,itemHeight:10},
+        series:[{type:'pie',radius:['42%','68%'],center:['50%','42%'],avoidLabelOverlap:true,
+          label:{color:'#cfe0f2',fontSize:10,formatter:'{b}\n{c}G'},labelLine:{lineStyle:{color:'rgba(56,189,248,.3)'}},
+          data:[{name:'已用',value:1,itemStyle:{color:'#3b82f6'}},{name:'空闲',value:1,itemStyle:{color:'rgba(56,189,248,.18)'}}]}]});
+      charts.fNetPie.setOption({tooltip:{trigger:'item',confine:true,backgroundColor:'rgba(6,12,24,.92)',borderColor:'rgba(56,189,248,.3)',textStyle:{color:'#d9e8f7',fontSize:11}},
+        legend:{bottom:0,textStyle:{color:'#6f86a6',fontSize:10},itemWidth:10,itemHeight:10},
+        series:[{type:'pie',radius:['42%','68%'],center:['50%','42%'],avoidLabelOverlap:true,
+          label:{color:'#cfe0f2',fontSize:10,formatter:'{b}\n{c}M'},labelLine:{lineStyle:{color:'rgba(56,189,248,.3)'}},
+          data:[{name:'下行',value:1,itemStyle:{color:'#8b5cf6'}},{name:'上行',value:1,itemStyle:{color:'#f472b6'}}]}]});
+      charts.fCpuHeat.setOption({
+        grid:{left:30,right:8,top:8,bottom:22,containLabel:true},
+        tooltip:{position:'top',confine:true,backgroundColor:'rgba(6,12,24,.92)',borderColor:'rgba(56,189,248,.3)',textStyle:{color:'#d9e8f7',fontSize:11}},
+        xAxis:{type:'category',data:[],axisLine:{lineStyle:{color:'rgba(56,189,248,.15)'}},axisTick:{show:false},axisLabel:{color:'#40556f',fontSize:8,interval:Math.max(5,Math.floor(S.N/6))}},
+        yAxis:{type:'category',data:[],axisLine:{lineStyle:{color:'rgba(56,189,248,.15)'}},axisTick:{show:false},axisLabel:{color:'#6f86a6',fontSize:8}},
+        visualMap:{min:0,max:100,show:false,calculable:false,inRange:{color:['#0a1526','#1e6b6f','#22e0e6','#8b5cf6','#f87171']}},
+        series:[{type:'heatmap',data:[],progressive:0,itemStyle:{borderColor:'rgba(3,5,12,.5)',borderWidth:0.5}}]});
+      charts.fGpuUtil.setOption({series:[gaugeOpt()]});
+      charts.fGpuMem.setOption({tooltip:{trigger:'item',confine:true,backgroundColor:'rgba(6,12,24,.92)',borderColor:'rgba(56,189,248,.3)',textStyle:{color:'#d9e8f7',fontSize:11}},
+        legend:{bottom:0,textStyle:{color:'#6f86a6',fontSize:10},itemWidth:10,itemHeight:10},
+        series:[{type:'pie',radius:['42%','68%'],center:['50%','42%'],avoidLabelOverlap:true,
+          label:{color:'#cfe0f2',fontSize:10,formatter:'{b}\n{c}MB'},labelLine:{lineStyle:{color:'rgba(56,189,248,.3)'}},
+          data:[{name:'已用',value:1,itemStyle:{color:'#8b5cf6'}},{name:'空闲',value:1,itemStyle:{color:'rgba(56,189,248,.18)'}}]}]});
+      setLine('fGpuTrend',['gpuUtil','gpuTemp'],['#22e0e6','#fbbf24'],['利用率','温度'],'%');
+    }
+
+    /* ---------- 更新 ---------- */
+    var labels=[];var HSRC={cpu:'cpu',mem:'mem',netIn:'netRx',netOut:'netTx',diskR:'diskR',diskW:'diskW'};
+    function pushHist(d){labels.push(t());if(labels.length>S.N)labels.shift();
+      Object.keys(HSRC).forEach(function(k){var v=d[HSRC[k]];S.hist[k].push(v==null?0:+v);if(S.hist[k].length>S.N)S.hist[k].shift();});
+      S.hist.load.push(d.load);if(S.hist.load.length>S.N)S.hist.load.shift();
+      S.hist.core.push(d.perCpu?d.perCpu.slice():[]);if(S.hist.core.length>S.N)S.hist.core.shift();
+      S.hist.temp.push(d.temp==null?0:+d.temp);if(S.hist.temp.length>S.N)S.hist.temp.shift();
+      var g=d.gpu||{};S.hist.gpuUtil.push(g.util==null?0:+g.util);if(S.hist.gpuUtil.length>S.N)S.hist.gpuUtil.shift();
+      S.hist.gpuTemp.push(g.temp==null?0:+g.temp);if(S.hist.gpuTemp.length>S.N)S.hist.gpuTemp.shift();}
+    function t(){var n=new Date();return pad(n.getHours())+':'+pad(n.getMinutes())+':'+pad(n.getSeconds());}
+    function updGauge(id,gv,gs,val,suffix,sub,color,max){
+      var c=charts[id];if(!c)return;
+      c.setOption({series:[gaugeEl()].map(function(s){s.progress.itemStyle.color=grad(color);if(s.pointer&&s.pointer.itemStyle)s.pointer.itemStyle.shadowColor=color;s.data=[{value:Math.min(100,val)}];return s;})});
+      gv.innerHTML=val.toFixed(0)+'<small>'+suffix+'</small>';
+      gs.textContent=sub; gv.style.textShadow='0 0 18px '+color+'99';
+    }
+    function updTrend(id){
+      var c=charts[id];if(!c||!c._keys)return;
+      var data=c._keys.map(function(k){return S.hist[k].slice();});
+      c.setOption({xAxis:{data:labels.slice()},series:c._keys.map(function(k,i){return {data:data[i]};})});
+    }
+    function updRadar(d){
+      var c=charts['radar'];if(!c)return;
+      var v=[d.cpu,d.mem,d.disk,Math.min(100,d.netRx+d.netTx*2),Math.min(100,(d.temp-30)*3),Math.min(100,d.load/(d.cores||1)*120)];
+      c.setOption({series:[{data:[{value:v,name:'健康度'}]}]});
+    }
+    function updLoad(d){
+      var c=charts['cLoad'];if(!c||!d.perCpu)return;
+      c.setOption({xAxis:{data:(d.perCpu.map(function(_,i){return 'C'+i;}))},series:[{data:d.perCpu}]});
+    }
+    function updProc(d){
+      var tb=$('procTab').querySelector('tbody');if(!d.topProc)return;
+      tb.innerHTML=d.topProc.slice(0,5).map(function(p){
+        var mc=p.cpu<85?'#22e0e6':'#f87171';
+        return '<tr><td class="pname">'+p.name+'</td><td class="num" style="color:'+mc+'">'+p.cpu.toFixed(1)+'%</td>'+
+          '<td class="num">'+p.memMb.toFixed(0)+'M</td></tr>';
+      }).join('')||'<tr><td colspan="3" style="color:var(--faint)">暂无数据</td></tr>';
+    }
+    function updCpuCores(d){if(!charts.fCpuCores||!d.perCpu)return;
+      charts.fCpuCores.setOption({yAxis:{data:d.perCpu.map(function(_,i){return 'C'+i;})},series:[{data:d.perCpu.map(function(v){return +v.toFixed(1);})}]});}
+    function updCpuHeat(){if(!charts.fCpuHeat)return;
+      var last=S.hist.core[S.hist.core.length-1]||[];var yd=[];for(var i=0;i<last.length;i++)yd.push('C'+i);
+      var data=[];for(var t=0;t<S.hist.core.length;t++){var row=S.hist.core[t]||[];for(var c=0;c<row.length;c++)data.push([t,c,+row[c]]);}
+      charts.fCpuHeat.setOption({xAxis:{data:labels.slice()},yAxis:{data:yd},series:[{data:data}]});}
+    function updTop(d,id,key,color){if(!charts[id]||!d.topProc)return;
+      var arr=d.topProc.slice().sort(function(a,b){return b[key]-a[key];}).slice(0,6).reverse();
+      charts[id].setOption({yAxis:{data:arr.map(function(p){return p.name;})},series:[{data:arr.map(function(p){return +(+p[key]).toFixed(1);}),itemStyle:{color:color,borderRadius:[0,3,3,0]}}]});}
+    function updBars(id,vals){if(!charts[id])return;charts[id].setOption({series:[{data:vals.map(function(v){return +(+v).toFixed(1);})}]});}
+    function updGaugeOnly(id,val,color,max){if(!charts[id])return;var g=gaugeOpt();g.progress.itemStyle.color=grad(color);g.data=[{value:Math.min(max||100,val)}];charts[id].setOption({series:[g]});}
+    function updMemPie(d){if(!charts.fMemPie)return;var used=+d.memUsedGb,free=Math.max(0.1,+d.memTotalGb-used);
+      charts.fMemPie.setOption({series:[{data:[{name:'已用',value:used,itemStyle:{color:'#3b82f6'}},{name:'空闲',value:+free.toFixed(1),itemStyle:{color:'rgba(56,189,248,.18)'}}]}]});}
+    function updNetPie(d){if(!charts.fNetPie)return;var dn=Math.max(0.1,d.netRx),up=Math.max(0.1,d.netTx);
+      charts.fNetPie.setOption({series:[{data:[{name:'下行',value:+dn.toFixed(2),itemStyle:{color:'#8b5cf6'}},{name:'上行',value:+up.toFixed(2),itemStyle:{color:'#f472b6'}}]}]});}
+    function updGpuMem(g){if(!charts.fGpuMem)return;var used=+g.memUsedMb,total=+g.memTotalMb,free=Math.max(0.1,total-used);
+      charts.fGpuMem.setOption({series:[{data:[{name:'已用',value:used,itemStyle:{color:'#8b5cf6'}},{name:'空闲',value:+free.toFixed(0),itemStyle:{color:'rgba(56,189,248,.18)'}}]}]});}
+    function updInfoGpu(g){setInfo('fGpuInfo',[
+      ['显卡',g.name],['利用率',g.util.toFixed(0)+'<small>%</small>'],['温度',g.temp.toFixed(0)+'<small>°C</small>'],
+      ['核心频率',(g.clockMHz||0)+'<small>MHz</small>'],
+      ['显存',(g.memUsedMb/1024).toFixed(1)+' / '+(g.memTotalMb/1024).toFixed(1)+'<small>GB</small>'],
+      ['功耗',(g.powerW!=null?g.powerW.toFixed(0):'--')+'<small>W</small>']]);}
+    function setInfo(id,rows){var el=$(id);if(!el)return;el.innerHTML=rows.map(function(r){return '<div class="info-row"><span class="k">'+r[0]+'</span><span class="v">'+r[1]+'</span></div>';}).join('');}
+    function updInfo(d){
+      setInfo('fMemInfo',[['已用内存',d.memUsedGb.toFixed(1)+'<small>GB</small>'],['总内存',d.memTotalGb.toFixed(1)+'<small>GB</small>'],
+        ['使用率',d.mem.toFixed(1)+'<small>%</small>'],['空闲',Math.max(0,d.memTotalGb-d.memUsedGb).toFixed(1)+'<small>GB</small>'],['进程数',d.procs]]);
+      setInfo('fDiskInfo',[['磁盘使用率',d.disk.toFixed(1)+'<small>%</small>'],['读取',d.diskR.toFixed(0)+'<small>MB/s</small>'],
+        ['写入',d.diskW.toFixed(0)+'<small>MB/s</small>'],['温度',d.temp.toFixed(1)+'<small>°C</small>']]);
+      setInfo('fNetInfo',[['下行',d.netRx.toFixed(1)+'<small>M/s</small>'],['上行',d.netTx.toFixed(1)+'<small>M/s</small>'],
+        ['数据源',S.mode==='live'?'实时':'演示'],['状态',S.paused?'已暂停':'采集中']]);
+    }
+    function render(d){
+      if(!(d.gpu&&d.gpu.util!=null))d.gpu=gpuData();
+      renderStrip(d);
+      updGauge('gCpu',$('gvCpu'),$('gsCpu'),d.cpu,'%','温度',lvl(d.cpu),100);
+      updGauge('gMem',$('gvMem'),$('gsMem'),d.mem,'%',d.memUsedGb+' / '+d.memTotalGb+' GB',lvl(d.mem),100);
+      updGauge('gDisk',$('gvDisk'),$('gsDisk'),d.disk,'%','R '+d.diskR.toFixed(0)+' / W '+d.diskW.toFixed(0)+' MB/s',lvl(d.disk),100);
+      updGauge('gNet',$('gvNet'),$('gsNet'),Math.max(0.5,d.netRx),'M','↓ '+d.netRx.toFixed(1)+' / ↑ '+d.netTx.toFixed(1)+' M',lvl(d.netRx),50);
+      pushHist(d);updTrend('cCpu');updTrend('cMem');updTrend('cNet');updTrend('cDisk');
+      updRadar(d);updLoad(d);updProc(d);
+      updTrend('fCpuTrend');updTrend('fMemTrend');updTrend('fDiskRW');updTrend('fNetThr');updTrend('fGpuTrend');
+      updCpuCores(d);updCpuHeat();updTop(d,'fCpuTop','cpu','#22e0e6');updTop(d,'fMemTop','memMb','#8b5cf6');
+      updGaugeOnly('fDiskGauge',d.disk,lvl(d.disk),100);
+      updBars('fDiskBars',[d.diskR,d.diskW]);updBars('fNetBars',[d.netRx,d.netTx]);
+      updMemPie(d);updNetPie(d);updInfo(d);
+      updGaugeOnly('fGpuUtil',d.gpu.util,lvl(d.gpu.util),100);
+      updGpuMem(d.gpu);updInfoGpu(d.gpu);
+    }
+
+    /* ---------- 焦点页签视图 ---------- */
+    var GPU_ICON='<svg viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="11" rx="2"/><path d="M8 17v3M16 17v3M6 11h3v3H6zM15 11h3v3h-3z"/><path d="M3 9h18"/></svg>';
+    function focusPanel(title,id,infoId){
+      var inner = id ? '<div class="chart-box" id="'+id+'"></div>' : '<div class="info-list" id="'+infoId+'"></div>';
+      return '<div class="panel"><div class="corner tl"></div><div class="corner tr"></div><div class="corner bl"></div><div class="corner br"></div><h3>'+title+'</h3>'+inner+'</div>';
+    }
+    function buildFocusViews(){
+      var stage=$('stage');
+      stage.insertAdjacentHTML('beforeend',
+        '<div class="view focus v-cpu" data-view="cpu">'
+        +focusPanel('各核心占用率','fCpuCores')+focusPanel('CPU 历史趋势','fCpuTrend')
+        +focusPanel('各核心负载热力','fCpuHeat')+focusPanel('进程 CPU 占用 Top5','fCpuTop')
+        +'</div>');
+      stage.insertAdjacentHTML('beforeend',
+        '<div class="view focus v-mem" data-view="mem">'
+        +focusPanel('内存占用趋势','fMemTrend')+focusPanel('内存分布 (已用/空闲)','fMemPie')
+        +focusPanel('进程内存占用 Top5','fMemTop')+focusPanel('内存明细',null,'fMemInfo')
+        +'</div>');
+      stage.insertAdjacentHTML('beforeend',
+        '<div class="view focus v-disk" data-view="disk">'
+        +focusPanel('磁盘使用率','fDiskGauge')+focusPanel('读写速率趋势','fDiskRW')
+        +focusPanel('当前读写速率','fDiskBars')+focusPanel('磁盘明细',null,'fDiskInfo')
+        +'</div>');
+      stage.insertAdjacentHTML('beforeend',
+        '<div class="view focus v-net" data-view="net">'
+        +focusPanel('吞吐趋势 (下行/上行)','fNetThr')+focusPanel('流量分布','fNetPie')
+        +focusPanel('当前速率','fNetBars')+focusPanel('网络明细',null,'fNetInfo')
+        +'</div>');
+      stage.insertAdjacentHTML('beforeend',
+        '<div class="view focus v-gpu" data-view="gpu">'
+        +focusPanel('GPU 利用率','fGpuUtil')+focusPanel('显存占用','fGpuMem')
+        +focusPanel('利用率 / 温度趋势','fGpuTrend')+focusPanel('GPU 明细',null,'fGpuInfo')
+        +'</div>');
+    }
+    function wireTabs(){
+      var tabs=document.querySelectorAll('.tab');
+      tabs.forEach(function(t){
+        t.addEventListener('click',function(){
+          tabs.forEach(function(x){x.classList.remove('active');});
+          t.classList.add('active');
+          var name=t.dataset.tab;
+          document.querySelectorAll('.view').forEach(function(v){
+            v.classList.toggle('active', v.dataset.view===name);
+          });
+          setTimeout(function(){Object.keys(charts).forEach(function(k){charts[k]&&charts[k].resize();});},40);
+        });
+      });
+    }
+
+    /* ---------- 主循环 ---------- */
+    function tick(){
+      if(S.paused)return;
+      var d=S.mode==='live'&&S.cur&&S.cur.hostname?S.cur:demoData();
+      render(d);
+    }
+    function loop(){tick();setInterval(tick,IV);tryLive();setInterval(tryLive,8000);}
+
+    /* ---------- 时钟 / 交互 ---------- */
+    function clock(){var n=new Date();$('clock').textContent=pad(n.getHours())+':'+pad(n.getMinutes())+':'+pad(n.getSeconds());}
+    $('pauseBtn').addEventListener('click',function(){
+      S.paused=!S.paused;this.textContent=S.paused?'RESUME':'PAUSE';
+      this.style.color=S.paused?'var(--amber)':'var(--dim)';
+      toast(S.paused?'数据流已<b>暂停</b>':'数据流已<b>恢复</b>');
+    });
+
+    /* ---------- 全屏 ---------- */
+    function enterFS(){var el=document.documentElement,p=null;
+      try{ if(el.requestFullscreen)p=el.requestFullscreen();
+        else if(el.webkitRequestFullscreen)p=el.webkitRequestFullscreen();
+        else if(el.msRequestFullscreen)p=el.msRequestFullscreen(); }catch(e){}
+      if(p&&p.catch)p.catch(function(){}); }
+    function exitFS(){var d=document;
+      try{ if(d.exitFullscreen)d.exitFullscreen();
+        else if(d.webkitExitFullscreen)d.webkitExitFullscreen(); }catch(e){} }
+    function toggleFS(){var d=document;(d.fullscreenElement||d.webkitFullscreenElement)?exitFS():enterFS();}
+    function syncFS(){var on=document.fullscreenElement||document.webkitFullscreenElement;
+      $('fsBtn').textContent=on?'退出':'全屏';}
+    document.addEventListener('fullscreenchange',syncFS);
+    document.addEventListener('webkitfullscreenchange',syncFS);
+    $('fsBtn').addEventListener('click',function(e){e.stopPropagation();toggleFS();});
+    /* 浏览器要求全屏必须由用户触发：首次点击/按键自动进入 */
+    function autoFS(){enterFS();document.removeEventListener('click',autoFS);document.removeEventListener('keydown',autoFS);}
+    document.addEventListener('click',autoFS);document.addEventListener('keydown',autoFS);
+    window.addEventListener('resize',function(){Object.keys(charts).forEach(function(k){charts[k]&&charts[k].resize();});});
+
+    /* ---------- 启动 ---------- */
+    buildFocusViews();
+    wireTabs();
+    seedDemo();
+    clock();setInterval(clock,1000);
+    if(typeof echarts!=='undefined'){initCharts();}
+    else{toast('<b>图表引擎加载失败</b>：请确认 echarts.min.js 与页面同目录，并已重启 live_data_server.py');}
+    setTimeout(function(){Object.keys(charts).forEach(function(k){charts[k]&&charts[k].resize();});},300);
+    setTimeout(function(){render(demoData());},50);
+    var boot=$('boot');setTimeout(function(){boot.classList.add('done');enterFS();},1200);
+    setTimeout(loop,1500);
+  })();
+  </script>
+</body>
+</html>
