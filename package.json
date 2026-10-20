@@ -1,0 +1,55 @@
+{
+  "name": "system-cockpit",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Cross-platform desktop system monitor",
+  "author": "System Cockpit",
+  "license": "MIT",
+  "main": "electron/main.cjs",
+  "scripts": {
+    "start": "electron .",
+    "test:smoke": "electron . --smoke-test",
+    "dist:win": "electron-builder --win",
+    "dist:mac": "electron-builder --mac",
+    "dist:linux": "electron-builder --linux",
+    "dist": "electron-builder"
+  },
+  "dependencies": {
+    "systeminformation": "^5.33.16"
+  },
+  "devDependencies": {
+    "electron": "^44.9.1",
+    "electron-builder": "^26.15.3"
+  },
+  "build": {
+    "appId": "com.systemcockpit.desktop",
+    "productName": "System Cockpit",
+    "asar": true,
+    "files": [
+      "electron/**/*",
+      "系统数据驾驶舱.html",
+      "echarts.min.js",
+      "fonts/**/*",
+      "package.json"
+    ],
+    "directories": {
+      "output": "release"
+    },
+    "win": {
+      "target": ["nsis", "zip"]
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true
+    },
+    "mac": {
+      "target": ["dmg", "zip"],
+      "category": "public.app-category.utilities"
+    },
+    "linux": {
+      "target": ["AppImage", "deb"],
+      "category": "Utility"
+    }
+  }
+}

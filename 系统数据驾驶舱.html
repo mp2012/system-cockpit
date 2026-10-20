@@ -79,9 +79,9 @@
     flex:0 0 auto;padding:clamp(6px,1vh,10px) 14px;border:1px solid var(--line);border-radius:12px;
     background:linear-gradient(180deg, rgba(13,27,52,.85), rgba(8,16,32,.75));
     box-shadow:0 0 24px rgba(34,224,230,.10) inset, 0 8px 30px rgba(0,0,0,.4);position:relative}
-  header.hud::before,header.hud::after{position:absolute;width:14px;height:14px;border-color:var(--cyan);border-style:solid;opacity:.9;content:""}
-  header.hud::before{top:-1px;left:-1px;border-width:2px 0 0 2px;border-radius:10px 0 0 0}
-  header.hud::after{bottom:-1px;right:-1px;border-width:0 2px 2px 0;border-radius:0 0 10px 0}
+  header.hud::before,header.hud::after{position:absolute;width:8px;height:8px;border-color:var(--cyan);border-style:solid;opacity:.35;content:""}
+  header.hud::before{top:0;left:0;border-width:1px 0 0 1px;border-radius:4px 0 0 0}
+  header.hud::after{bottom:0;right:0;border-width:0 1px 1px 0;border-radius:0 0 4px 0}
   .brand{display:flex;align-items:baseline;gap:10px;flex-wrap:nowrap;min-width:0}
   .brand .t1{font-family:var(--font-num);font-weight:800;font-size:clamp(15px,1.9vw,22px);letter-spacing:.12em;color:#eaf6ff;
     text-shadow:0 0 16px rgba(34,224,230,.55);white-space:nowrap}
@@ -90,7 +90,7 @@
   @media(min-width:880px){.brand .t2{display:inline}}
 
   /* 页签 */
-  .tabs{display:flex;align-items:center;gap:4px;justify-content:center;overflow-x:auto;scrollbar-width:none}
+  .tabs{display:flex;align-items:center;gap:4px;justify-content:center;min-width:0;overflow-x:auto;scrollbar-width:none;overscroll-behavior-x:contain}
   .tabs::-webkit-scrollbar{display:none}
   .tab{font-family:var(--font-num);font-size:clamp(11px,1.1vw,13px);letter-spacing:.1em;color:var(--dim);
     background:transparent;border:1px solid transparent;border-radius:8px;padding:6px clamp(8px,1vw,14px);
@@ -124,6 +124,7 @@
   .chip .k svg{width:12px;height:12px;stroke:var(--cyan);fill:none;stroke-width:1.7;flex:0 0 auto}
   .chip .v{font-family:var(--font-num);font-size:clamp(13px,1.5vw,18px);color:#eaf6ff;margin-top:3px;
     text-shadow:0 0 10px rgba(34,224,230,.35);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .strip .chip:first-child .v{font-size:clamp(11px,1vw,14px)}
   .chip .v small{font-family:var(--font-body);color:var(--dim);font-size:10px;margin-left:3px}
 
   /* 主舞台（占满剩余高度，不滚动） */
@@ -158,11 +159,11 @@
       padding:clamp(6px,1vh,10px) clamp(6px,1vw,10px) clamp(5px,0.8vh,8px);
       box-shadow:0 10px 34px rgba(0,0,0,.4), 0 0 0 1px rgba(34,224,230,.04) inset;
       display:flex;flex-direction:column;min-height:0;min-width:0;overflow:hidden}
-  .panel .corner{position:absolute;width:12px;height:12px;border-color:var(--cyan);border-style:solid;opacity:.85}
-  .panel .corner.tl{top:0;left:0;border-width:2px 0 0 2px;border-radius:8px 0 0 0}
-  .panel .corner.tr{top:0;right:0;border-width:2px 2px 0 0;border-radius:0 8px 0 0}
-  .panel .corner.bl{bottom:0;left:0;border-width:0 0 2px 2px;border-radius:0 0 0 8px}
-  .panel .corner.br{bottom:0;right:0;border-width:0 2px 2px 0;border-radius:0 0 8px 0}
+  .panel .corner{position:absolute;width:8px;height:8px;border-color:var(--cyan);border-style:solid;opacity:.35}
+  .panel .corner.tl{top:0;left:0;border-width:1px 0 0 1px;border-radius:4px 0 0 0}
+  .panel .corner.tr{top:0;right:0;border-width:1px 1px 0 0;border-radius:0 4px 0 0}
+  .panel .corner.bl{bottom:0;left:0;border-width:0 0 1px 1px;border-radius:0 0 0 4px}
+  .panel .corner.br{bottom:0;right:0;border-width:0 1px 1px 0;border-radius:0 0 4px 0}
   .panel h3{display:flex;align-items:center;gap:7px;font-size:11px;color:var(--dim);letter-spacing:.18em;font-weight:500;
     margin:1px 4px 5px;flex:0 0 auto}
   .panel h3 .dot{width:6px;height:6px;border-radius:50%;background:var(--cyan);box-shadow:0 0 8px var(--cyan)}
@@ -181,6 +182,10 @@
 
   /* 图表容器（自适应填满面板） */
   .chart-box{width:100%;flex:1;min-height:0}
+  .gpu-empty-state{position:absolute;inset:30px 8px 8px;z-index:3;display:none;align-items:center;justify-content:center;
+    padding:8px;text-align:center;color:var(--dim);font-size:11px;line-height:1.5;background:rgba(7,15,30,.94)}
+  .gpu-empty-state small{display:block;margin-top:5px;color:var(--faint);font-size:9px}
+  .gpu-panel.is-unavailable .gpu-empty-state{display:flex}
 
   /* 进程表 */
   .proc-wrap{flex:1;min-height:0;overflow:hidden;display:flex;flex-direction:column}
@@ -229,10 +234,20 @@
     .panel h3{font-size:10px;margin-bottom:3px}
     .gauge-card .gval{font-size:21px}
   }
+  @media (max-width:1300px){
+    .strip{grid-template-columns:repeat(3,minmax(0,1fr))}
+  }
+  @media (orientation:landscape) and (max-width:1300px){
+    .strip{grid-template-columns:repeat(6,minmax(0,1fr))}
+  }
   /* 窄屏回退：允许滚动（大屏仍单屏不滚） */
   @media (max-width:980px){
     body{overflow:auto}
     .app{height:auto;min-height:100vh}
+    header.hud{grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"brand meta" "tabs tabs";row-gap:6px}
+    .brand{grid-area:brand}
+    .tabs{grid-area:tabs;width:100%;justify-content:flex-start}
+    .hud-meta{grid-area:meta;gap:6px}
     .stage{overflow:visible}
     .overview{grid-template-columns:1fr;grid-template-rows:none}
     .gauges{grid-template-columns:repeat(2,1fr)}
@@ -241,6 +256,65 @@
     .panel{min-height:200px}
     .gauge-card .chart-box{height:150px}
     .view.active.focus{grid-template-columns:1fr}
+  }
+  @media (max-width:600px){
+    .brand .t2{display:none}
+    .hud-meta{gap:4px}
+    .clock{display:none}
+    .src{font-size:9px;letter-spacing:.06em;padding:4px 6px}
+    .btn{min-width:0;padding:5px 6px;letter-spacing:.08em}
+    .strip{grid-template-columns:repeat(2,minmax(0,1fr))}
+  }
+  @media (orientation:landscape) and (max-width:980px){
+    body{overflow:hidden}
+    .app{height:100dvh;min-height:0;padding:4px 8px;gap:4px}
+    header.hud{grid-template-columns:auto minmax(0,1fr) auto;grid-template-areas:none;padding:4px 8px;row-gap:0;border-radius:8px}
+    .brand,.tabs,.hud-meta{grid-area:auto}
+    .tabs{width:auto;justify-content:center}
+    .hud-meta{gap:4px}
+    .strip{grid-template-columns:repeat(6,minmax(0,1fr));gap:4px}
+    .chip{padding:4px 6px;border-radius:6px}
+    .stage{overflow:hidden}
+    .overview{grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);grid-template-rows:auto minmax(0,1fr);gap:4px}
+    .gauges{grid-column:1/-1}
+    .gauges{grid-template-columns:repeat(4,minmax(0,1fr));gap:4px}
+    .left{grid-column:1;grid-template-columns:repeat(2,minmax(0,1fr));grid-template-rows:repeat(2,minmax(0,1fr));gap:4px}
+    .right{grid-column:2;grid-template-rows:repeat(3,minmax(0,1fr));gap:4px}
+    .panel{min-height:0;padding:4px}
+    .panel h3{font-size:9px;letter-spacing:.08em;margin:0 2px 2px}
+    .gauge-wrap{height:clamp(68px,18vh,106px)}
+    .gauge-card .gsub{font-size:9px;letter-spacing:0}
+    .view.active.focus{grid-template-columns:repeat(2,minmax(0,1fr));grid-template-rows:repeat(2,minmax(0,1fr))}
+    .info-list{overflow:hidden}
+    .info-row{padding:3px 4px}
+    .panel .corner{opacity:.35}
+  }
+  @media (orientation:landscape) and (max-height:720px){
+    .info-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));grid-auto-rows:minmax(0,1fr);align-content:stretch;overflow:hidden}
+    .info-row{min-width:0;padding:3px 4px}
+  }
+  @media (orientation:landscape) and (max-width:980px) and (max-height:480px){
+    .app{padding:3px 6px;gap:3px}
+    header.hud{padding:3px 6px;row-gap:2px}
+    .tabs{gap:2px}
+    .tab{font-size:10px;letter-spacing:0;padding:4px 5px}
+    .hud-meta{gap:3px}
+    .clock{min-width:0;font-size:10px;letter-spacing:0}
+    .btn{min-width:50px;padding:3px 4px;font-size:9px;letter-spacing:.04em}
+    .strip{gap:3px}
+    .chip{padding:3px 5px}
+    .chip .k{font-size:8px;letter-spacing:0}
+    .chip .v{font-size:10px}
+    .strip .chip:first-child .v{font-size:7px}
+    .overview{grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);grid-template-rows:auto minmax(0,1fr)}
+    .gauges{grid-column:1/-1;grid-template-columns:repeat(4,minmax(0,1fr));align-items:center}
+    .left{display:grid;grid-column:1;grid-template-columns:repeat(2,minmax(0,1fr));grid-template-rows:repeat(2,minmax(0,1fr))}
+    .right{display:grid;grid-column:2;grid-template-rows:repeat(3,minmax(0,1fr))}
+    .panel h3{font-size:8px;letter-spacing:0;margin:0 1px 1px}
+    .gauge-wrap{height:clamp(44px,14vh,64px)}
+    .gauge-card .gval{font-size:16px}
+    .gauge-card .gsub{font-size:8px}
+    .view.active.focus .panel{padding:3px}
   }
   @media (prefers-reduced-motion: reduce){
     .bg .grid,.bg .stars,.src.live i{animation:none}
@@ -325,6 +399,7 @@
     var $=function(id){return document.getElementById(id);};
     var S={mode:'demo',paused:false,hist:{cpu:[],mem:[],netIn:[],netOut:[],diskR:[],diskW:[],load:[],core:[],temp:[],gpuUtil:[],gpuTemp:[]},cur:{},N:90};
     var API=(location.protocol.indexOf('http')===0)?'./api/stats':'http://127.0.0.1:8765/api/stats';
+    var desktopBridge=window.systemCockpit;
     var IV=2000;
 
     /* ---------- 工具 ---------- */
@@ -377,15 +452,18 @@
 
     /* ---------- 实时桥接 ---------- */
     function tryLive(){
-      if(!('fetch'in window))return;
-      fetch(API,{cache:'no-store'}).then(function(r){if(!r.ok)throw 0;return r.json();}).then(function(d){
+      var request;
+      if(desktopBridge&&typeof desktopBridge.getStats==='function')request=desktopBridge.getStats();
+      else if('fetch'in window)request=fetch(API,{cache:'no-store'}).then(function(r){if(!r.ok)throw 0;return r.json();});
+      else return;
+      Promise.resolve(request).then(function(d){
         S.mode='live';S.cur=d;setLiveUI(true);
       }).catch(function(){S.mode='demo';setLiveUI(false);});
     }
     function setLiveUI(on){
       var tag=$('srcTag'),txt=$('srcTxt');
-      if(on){tag.className='src live';txt.textContent='实时数据';$('footHint').textContent='已接入 live_data_server.py · 数据来自本机';}
-      else if(tag.className.indexOf('live')>=0){tag.className='src demo';txt.textContent='演示数据';$('footHint').textContent='实时服务未连接，已切换到演示数据 · 运行 live_data_server.py 可接入真实数据';toast('实时数据服务未连接，已切换为<b>演示数据</b>');}
+      if(on){tag.className='src live';txt.textContent='实时数据';$('footHint').textContent=desktopBridge?'桌面应用 · 数据来自本机':'已接入 live_data_server.py · 数据来自本机';}
+      else if(tag.className.indexOf('live')>=0){tag.className='src demo';txt.textContent='演示数据';$('footHint').textContent=desktopBridge?'实时数据获取失败，已切换到演示数据':'实时服务未连接，已切换到演示数据 · 运行 live_data_server.py 可接入真实数据';toast('实时数据获取失败，已切换为<b>演示数据</b>');}
     }
 
     /* ---------- 状态条 ---------- */
@@ -540,8 +618,8 @@
       S.hist.load.push(d.load);if(S.hist.load.length>S.N)S.hist.load.shift();
       S.hist.core.push(d.perCpu?d.perCpu.slice():[]);if(S.hist.core.length>S.N)S.hist.core.shift();
       S.hist.temp.push(d.temp==null?0:+d.temp);if(S.hist.temp.length>S.N)S.hist.temp.shift();
-      var g=d.gpu||{};S.hist.gpuUtil.push(g.util==null?0:+g.util);if(S.hist.gpuUtil.length>S.N)S.hist.gpuUtil.shift();
-      S.hist.gpuTemp.push(g.temp==null?0:+g.temp);if(S.hist.gpuTemp.length>S.N)S.hist.gpuTemp.shift();}
+      var g=d.gpu||{};S.hist.gpuUtil.push(g.util==null?null:+g.util);if(S.hist.gpuUtil.length>S.N)S.hist.gpuUtil.shift();
+      S.hist.gpuTemp.push(g.temp==null?null:+g.temp);if(S.hist.gpuTemp.length>S.N)S.hist.gpuTemp.shift();}
     function t(){var n=new Date();return pad(n.getHours())+':'+pad(n.getMinutes())+':'+pad(n.getSeconds());}
     function updGauge(id,gv,gs,val,suffix,sub,color,max){
       var c=charts[id];if(!c)return;
@@ -593,6 +671,9 @@
       ['核心频率',(g.clockMHz||0)+'<small>MHz</small>'],
       ['显存',(g.memUsedMb/1024).toFixed(1)+' / '+(g.memTotalMb/1024).toFixed(1)+'<small>GB</small>'],
       ['功耗',(g.powerW!=null?g.powerW.toFixed(0):'--')+'<small>W</small>']]);}
+    function setGpuAvailability(available){
+      document.querySelectorAll('.gpu-panel').forEach(function(panel){panel.classList.toggle('is-unavailable',!available);});
+    }
     function setInfo(id,rows){var el=$(id);if(!el)return;el.innerHTML=rows.map(function(r){return '<div class="info-row"><span class="k">'+r[0]+'</span><span class="v">'+r[1]+'</span></div>';}).join('');}
     function updInfo(d){
       setInfo('fMemInfo',[['已用内存',d.memUsedGb.toFixed(1)+'<small>GB</small>'],['总内存',d.memTotalGb.toFixed(1)+'<small>GB</small>'],
@@ -603,9 +684,11 @@
         ['数据源',S.mode==='live'?'实时':'演示'],['状态',S.paused?'已暂停':'采集中']]);
     }
     function render(d){
-      if(!(d.gpu&&d.gpu.util!=null))d.gpu=gpuData();
+      if(!(d.gpu&&d.gpu.util!=null)&&S.mode!=='live')d.gpu=gpuData();
+      var gpuAvailable=!!(d.gpu&&d.gpu.util!=null);
+      setGpuAvailability(gpuAvailable);
       renderStrip(d);
-      updGauge('gCpu',$('gvCpu'),$('gsCpu'),d.cpu,'%','温度',lvl(d.cpu),100);
+      updGauge('gCpu',$('gvCpu'),$('gsCpu'),d.cpu,'%','温度 '+d.temp.toFixed(1)+'°C',lvl(d.cpu),100);
       updGauge('gMem',$('gvMem'),$('gsMem'),d.mem,'%',d.memUsedGb+' / '+d.memTotalGb+' GB',lvl(d.mem),100);
       updGauge('gDisk',$('gvDisk'),$('gsDisk'),d.disk,'%','R '+d.diskR.toFixed(0)+' / W '+d.diskW.toFixed(0)+' MB/s',lvl(d.disk),100);
       updGauge('gNet',$('gvNet'),$('gsNet'),Math.max(0.5,d.netRx),'M','↓ '+d.netRx.toFixed(1)+' / ↑ '+d.netTx.toFixed(1)+' M',lvl(d.netRx),50);
@@ -616,15 +699,19 @@
       updGaugeOnly('fDiskGauge',d.disk,lvl(d.disk),100);
       updBars('fDiskBars',[d.diskR,d.diskW]);updBars('fNetBars',[d.netRx,d.netTx]);
       updMemPie(d);updNetPie(d);updInfo(d);
-      updGaugeOnly('fGpuUtil',d.gpu.util,lvl(d.gpu.util),100);
-      updGpuMem(d.gpu);updInfoGpu(d.gpu);
+      if(gpuAvailable){
+        updGaugeOnly('fGpuUtil',d.gpu.util,lvl(d.gpu.util),100);
+        updGpuMem(d.gpu);updInfoGpu(d.gpu);
+      }else{$('fGpuInfo').textContent='';}
     }
 
     /* ---------- 焦点页签视图 ---------- */
     var GPU_ICON='<svg viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="11" rx="2"/><path d="M8 17v3M16 17v3M6 11h3v3H6zM15 11h3v3h-3z"/><path d="M3 9h18"/></svg>';
     function focusPanel(title,id,infoId){
       var inner = id ? '<div class="chart-box" id="'+id+'"></div>' : '<div class="info-list" id="'+infoId+'"></div>';
-      return '<div class="panel"><div class="corner tl"></div><div class="corner tr"></div><div class="corner bl"></div><div class="corner br"></div><h3>'+title+'</h3>'+inner+'</div>';
+      var isGpu=String(id||infoId||'').indexOf('fGpu')===0;
+      var empty=isGpu?'<div class="gpu-empty-state" role="status" aria-live="polite">未检测到可读取的 GPU 实时指标<small>当前采集器支持 NVIDIA nvidia-smi</small></div>':'';
+      return '<div class="panel'+(isGpu?' gpu-panel':'')+'"><div class="corner tl"></div><div class="corner tr"></div><div class="corner bl"></div><div class="corner br"></div><h3>'+title+'</h3>'+inner+empty+'</div>';
     }
     function buildFocusViews(){
       var stage=$('stage');
@@ -700,9 +787,6 @@
     document.addEventListener('fullscreenchange',syncFS);
     document.addEventListener('webkitfullscreenchange',syncFS);
     $('fsBtn').addEventListener('click',function(e){e.stopPropagation();toggleFS();});
-    /* 浏览器要求全屏必须由用户触发：首次点击/按键自动进入 */
-    function autoFS(){enterFS();document.removeEventListener('click',autoFS);document.removeEventListener('keydown',autoFS);}
-    document.addEventListener('click',autoFS);document.addEventListener('keydown',autoFS);
     window.addEventListener('resize',function(){Object.keys(charts).forEach(function(k){charts[k]&&charts[k].resize();});});
 
     /* ---------- 启动 ---------- */
@@ -714,7 +798,7 @@
     else{toast('<b>图表引擎加载失败</b>：请确认 echarts.min.js 与页面同目录，并已重启 live_data_server.py');}
     setTimeout(function(){Object.keys(charts).forEach(function(k){charts[k]&&charts[k].resize();});},300);
     setTimeout(function(){render(demoData());},50);
-    var boot=$('boot');setTimeout(function(){boot.classList.add('done');enterFS();},1200);
+    var boot=$('boot');setTimeout(function(){boot.classList.add('done');},1200);
     setTimeout(loop,1500);
   })();
   </script>

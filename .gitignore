@@ -9,3 +9,7 @@ __pycache__/
 
 # 项目本地数据目录（如存在）
 .codebuddy/
+
+# Electron build outputs
+node_modules/
+release/

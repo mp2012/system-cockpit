@@ -83,6 +83,19 @@ Double-click `系统数据驾驶舱.html`. It opens in **demo mode** with synthe
   ```
 > Stop the service: close the "系统数据驾驶舱" window on Windows, or run the `kill <PID>` printed by the script on Linux/macOS.
 
+### Desktop app packaging
+
+The repository includes an Electron desktop build. End users do not need to install Node.js or Python; metrics are collected locally through Electron IPC without opening a local HTTP port. Developers need Node.js 24+ and should build on the target platform:
+
+```bash
+npm install
+npm run dist:win    # Windows: NSIS installer + ZIP
+npm run dist:mac    # macOS: DMG + ZIP
+npm run dist:linux  # Linux: AppImage + deb
+```
+
+Build each platform on its native OS. macOS distribution requires code signing and notarization; Linux runtime dependencies are provided by the target distribution. Artifacts are written to `release/`.
+
 ## Data Source & Live Mode
 
 `live_data_server.py` collects system metrics with `psutil` and returns JSON at `/api/stats`, polled by the frontend every 2 seconds. Collected items:

@@ -85,6 +85,19 @@
   ```
 > 停止服务：关闭 Windows 弹出的「系统数据驾驶舱」窗口；或在 Linux/macOS 执行脚本输出的 `kill <PID>`。
 
+### 桌面应用打包
+
+仓库提供 Electron 桌面版配置。终端用户安装生成的安装包后无需另装 Node.js 或 Python；指标通过 Electron IPC 在本机采集，不开放本地 HTTP 端口。开发者需安装 Node.js 24+，并在目标平台执行：
+
+```bash
+npm install
+npm run dist:win    # Windows: NSIS 安装包 + ZIP
+npm run dist:mac    # macOS: DMG + ZIP
+npm run dist:linux  # Linux: AppImage + deb
+```
+
+跨平台产物应分别在 Windows、macOS 和 Linux 原生环境构建。macOS 正式分发还需代码签名与公证；Linux 运行依赖由目标发行版提供。构建产物位于 `release/`。
+
 ---
 
 ## 数据源与实时模式
