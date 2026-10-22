@@ -5,10 +5,10 @@
 ![ECharts](https://img.shields.io/badge/charts-Apache%20ECharts-5470c6)
 ![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20Linux%20%7C%20macOS-lightgrey)
 
-A **pure front-end + lightweight local server** PC real-time performance monitoring dashboard. Single-screen overview plus five detail tabs (CPU / Memory / Disk / Network / GPU), visualized with ECharts.
+A PC real-time performance dashboard designed for a secondary landscape display, available as a local browser app or an Electron desktop app. It has a single-screen overview and five detail tabs (CPU / Memory / Disk / Network / GPU), visualized with ECharts.
 
 - **Fully offline / intranet-ready** — all dependencies (ECharts, fonts) are bundled locally; no external network required.
-- **Data never leaves your machine** — the backend binds to loopback `127.0.0.1` only.
+- **Data stays on your machine** — browser mode binds to loopback `127.0.0.1`; the Electron app collects through local IPC without opening an HTTP port.
 - **Cross-platform** — runs on Windows / Linux / macOS.
 
 ## Screenshots
@@ -19,9 +19,9 @@ A **pure front-end + lightweight local server** PC real-time performance monitor
 
 | | |
 |---|---|
-| ![view1](assets/shots/shot1.png) | ![view2](assets/shots/shot2.png) |
-| ![view3](assets/shots/shot3.png) | ![view4](assets/shots/shot4.png) |
-| ![view5](assets/shots/shot5.png) | ![view6](assets/shots/shot6.png) |
+| ![Overview](assets/shots/shot1.png) | ![CPU details](assets/shots/shot2.png) |
+| ![Memory details](assets/shots/shot3.png) | ![Disk details](assets/shots/shot4.png) |
+| ![Network details](assets/shots/shot5.png) | ![GPU details](assets/shots/shot6.png) |
 
 ---
 
@@ -39,7 +39,7 @@ A **pure front-end + lightweight local server** PC real-time performance monitor
 - **Two data modes**
   - **Live mode** — served by `live_data_server.py`, real system metrics (refreshed every 2s).
   - **Demo mode** — when the server is not running, synthetic data is used so the page still works.
-- **GPU** — collected via `nvidia-smi` when available (real NVIDIA data); otherwise the frontend falls back to synthetic demo data, so the page is never blank.
+- **GPU** — live NVIDIA metrics are collected via `nvidia-smi` when available. If no live GPU metrics are available, the live UI says so instead of displaying fabricated values; synthetic GPU metrics are limited to demo mode.
 - **TOP processes** exclude system pseudo-processes (`System Idle Process`, `System`, `Idle`, etc.) for a cleaner list.
 
 ## Directory Structure
@@ -50,10 +50,14 @@ System Cockpit/
 ├── live_data_server.py   # Local live data service (psutil collect + static serve)
 ├── start.bat             # Windows one-click launcher
 ├── start.sh              # Linux / macOS one-click launcher
+├── electron/             # Electron main process and secure preload IPC
+├── package.json          # Electron and cross-platform packaging config
+├── package-lock.json     # Locked npm dependencies
 ├── echarts.min.js        # Bundled ECharts engine (offline)
 ├── fonts/                # Bundled fonts (Orbitron, numeric display)
 │   └── orbitron-latin-*.woff2
-├── assets/               # Screenshots used by README
+├── assets/shots/         # Large-screen UI screenshots
+├── .github/workflows/    # Windows / macOS / Linux build workflow
 ├── server.log            # Runtime log (created after starting the service)
 ├── LICENSE
 └── README.md / README.en.md
@@ -116,7 +120,7 @@ Build each platform on its native OS. macOS distribution requires code signing a
 |-----------|------------------|-------|
 | Frontend | Any modern browser | ECharts & fonts bundled → offline |
 | Backend | Windows / Linux / macOS | Python 3 + `psutil`; hardened: `getloadavg` fallback on Windows, `net_io`/`disk_io` None guards, disk usage uses the home partition |
-| Real GPU data | NVIDIA only (needs `nvidia-smi`) | Other GPUs fall back to demo data |
+| Real GPU data | NVIDIA (needs `nvidia-smi`) | Live mode reports unavailable metrics; synthetic GPU data appears only in demo mode |
 
 ## LAN Access (optional)
 

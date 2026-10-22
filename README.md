@@ -5,10 +5,10 @@
 ![ECharts](https://img.shields.io/badge/charts-Apache%20ECharts-5470c6)
 ![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20Linux%20%7C%20macOS-lightgrey)
 
-一个**纯前端 + 轻量本地服务**的 PC 实时性能监控面板。单屏总览 + 五个详情页签（CPU / 内存 / 磁盘 / 网络 / 显卡），数据可视化基于 ECharts。
+一个面向电脑副屏的 PC 实时性能监控面板，提供浏览器本地服务和 Electron 桌面应用两种运行方式。横屏单屏总览 + 五个详情页签（CPU / 内存 / 磁盘 / 网络 / 显卡），数据可视化基于 ECharts。
 
 - **完全离线 / 内网可用**：所有依赖（ECharts、字体）已本地化，不依赖任何外网。
-- **数据不出本机**：后端仅绑定回环地址 `127.0.0.1`，不对外暴露。
+- **数据不出本机**：浏览器服务仅绑定回环地址 `127.0.0.1`；Electron 版通过本地 IPC 取数，不开放 HTTP 端口。
 - **跨平台**：Windows / Linux / macOS 均可运行。
 
 ## 界面预览
@@ -19,9 +19,9 @@
 
 | | |
 |---|---|
-| ![预览1](assets/shots/shot1.png) | ![预览2](assets/shots/shot2.png) |
-| ![预览3](assets/shots/shot3.png) | ![预览4](assets/shots/shot4.png) |
-| ![预览5](assets/shots/shot5.png) | ![预览6](assets/shots/shot6.png) |
+| ![总览](assets/shots/shot1.png) | ![CPU 详情](assets/shots/shot2.png) |
+| ![内存详情](assets/shots/shot3.png) | ![磁盘详情](assets/shots/shot4.png) |
+| ![网络详情](assets/shots/shot5.png) | ![显卡详情](assets/shots/shot6.png) |
 
 ---
 
@@ -39,7 +39,7 @@
 - **两种数据模式**
   - **实时模式**：由 `live_data_server.py` 提供真实系统指标（每 2 秒刷新）。
   - **演示模式**：未启动服务时自动使用合成数据，页面照常可看。
-- **显卡（GPU）**：服务端通过 `nvidia-smi` 尽力采集（N 卡 + 驱动可用时显示真实数据）；无 N 卡 / 无驱动时前端自动回退到合成演示数据，页面不空白。
+- **显卡（GPU）**：实时模式通过 `nvidia-smi` 尽力采集 NVIDIA 显卡数据；没有可读指标时明确显示“未检测到可读取的 GPU 实时指标”，不会伪造实时数值。演示模式仍使用合成 GPU 数据。
 - **TOP 进程**已过滤 `System Idle Process`、`System`、`Idle` 等系统伪进程，列表更干净。
 
 ---
@@ -52,11 +52,16 @@
 ├── live_data_server.py   # 本地实时数据服务（psutil 采集 + 静态托管）
 ├── start.bat             # Windows 一键启动脚本
 ├── start.sh              # Linux / macOS 一键启动脚本
+├── electron/             # Electron 主进程与安全 preload IPC
+├── package.json          # Electron 与跨平台打包配置
+├── package-lock.json     # npm 锁定依赖
 ├── echarts.min.js        # 本地 ECharts 引擎（已离线化）
 ├── fonts/                # 本地字体（Orbitron，数字字体）
 │   └── orbitron-latin-*.woff2
-├── server.log            # 运行时日志（启动服务后生成）
-└── README.md
+├── assets/shots/         # 大屏界面截图
+├── .github/workflows/    # Windows / macOS / Linux 构建流程
+├── LICENSE
+└── README.md / README.en.md
 ```
 
 ---
@@ -122,7 +127,7 @@ npm run dist:linux  # Linux: AppImage + deb
 |------|----------|------|
 | 前端 HTML | 任意现代浏览器 | 已本地化 ECharts 与字体，离线可用 |
 | 后端服务 | Windows / Linux / macOS | 基于 `psutil`，已加固：`getloadavg` 在 Windows 不存在时按 CPU 估算；`net_io`/`disk_io` 在 macOS 可能返回 `None` 已保护；磁盘使用率取主目录所在分区 |
-| GPU 真实数据 | 仅 NVIDIA（需 `nvidia-smi`） | 其它显卡自动回退演示数据 |
+| GPU 真实数据 | NVIDIA（需 `nvidia-smi`） | 实时模式无指标时显示不可用；仅演示模式显示合成数据 |
 
 ---
 
