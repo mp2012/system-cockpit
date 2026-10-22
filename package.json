@@ -9,10 +9,10 @@
   "scripts": {
     "start": "electron .",
     "test:smoke": "electron . --smoke-test",
-    "dist:win": "electron-builder --win",
-    "dist:mac": "electron-builder --mac",
-    "dist:linux": "electron-builder --linux",
-    "dist": "electron-builder"
+    "dist:win": "electron-builder --win --publish never",
+    "dist:mac": "electron-builder --mac --publish never",
+    "dist:linux": "electron-builder --linux --publish never",
+    "dist": "electron-builder --publish never"
   },
   "dependencies": {
     "systeminformation": "^5.33.16"
@@ -27,7 +27,7 @@
     "asar": true,
     "files": [
       "electron/**/*",
-      "系统数据驾驶舱.html",
+      "ç³»ç»Ÿæ•°æ®é©¾é©¶èˆ±.html",
       "echarts.min.js",
       "fonts/**/*",
       "package.json"
