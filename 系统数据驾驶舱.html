@@ -586,7 +586,7 @@
       charts.fDiskGauge.setOption({series:[gaugeOpt()]});
       charts.fDiskBars.setOption({grid:baseGrid(),
         xAxis:{type:'category',data:['读取','写入'],axisLine:{lineStyle:{color:'rgba(56,189,248,.15)'}},axisTick:{show:false},axisLabel:{color:'#6f86a6',fontSize:10}},
-        yAxis:{type:'value',splitLine:{lineStyle:{color:'rgba(56,189,248,.07)'}},axisLabel:{color:'#40556f',fontSize:9,formatter:'{value}'}},
+        yAxis:{type:'value',min:0,max:function(v){return Math.max(120,Math.ceil(v.max/10)*10);},splitLine:{lineStyle:{color:'rgba(56,189,248,.07)'}},axisLabel:{color:'#40556f',fontSize:9,formatter:'{value}'}},
         series:[{type:'bar',data:[],barWidth:'42%',itemStyle:{color:function(p){return p.dataIndex===0?'#34d399':'#fbbf24';},borderRadius:[3,3,0,0]}}]});
       charts.fNetBars.setOption({grid:baseGrid(),
         xAxis:{type:'category',data:['下行','上行'],axisLine:{lineStyle:{color:'rgba(56,189,248,.15)'}},axisTick:{show:false},axisLabel:{color:'#6f86a6',fontSize:10}},
