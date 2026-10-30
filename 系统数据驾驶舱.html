@@ -413,12 +413,13 @@
     function fmtUptime(sec){sec=Math.max(0,sec|0);var d=sec/86400|0,h=sec%86400/3600|0,m=sec%3600/60|0;if(d>0)return d+'d '+h+'h';if(h>0)return h+'h '+m+'m';return m+'m '+sec%60+'s';}
     function lvl(v){if(v<60)return '#22e0e6';if(v<85)return '#fbbf24';return '#f87171';}
     function grad(color){var g=new echarts.graphic.LinearGradient(0,0,0,1,[{offset:0,color:color},{offset:1,color:color+'33'}]);return g;}
+    function fmtGB(gb){gb=+gb||0;return gb>=1024?((gb/1024).toFixed(2)+' TB'):(gb.toFixed(0)+' GB');}
     function toast(html){var t=$('toast');t.innerHTML=html;t.classList.add('show');clearTimeout(t._k);t._k=setTimeout(function(){t.classList.remove('show');},3200);}
 
     /* ---------- 演示数据模拟 ---------- */
     function rnd(a,b){return a+Math.random()*(b-a);}
     function walk(v,min,max,step){v+=rnd(-step,step);v=Math.max(min,Math.min(max,v));return v;}
-    var D={cpu:18,mem:42,disk:32,load:1.2,netIn:3.4,netOut:0.6,diskR:12,diskW:4,temp:42,cores:8,cpuCore:[],up:0,gpu:{util:14,memUsedMb:1500,memTotalMb:8192,temp:46,clockMHz:210,fan:32,powerW:28,name:'NVIDIA GeForce RTX 4060'}};
+    var D={cpu:18,mem:42,disk:32,load:1.2,netIn:3.4,netOut:0.6,diskR:12,diskW:4,temp:42,cores:8,cpuCore:[],up:0,gpu:{util:14,memUsedMb:1500,memTotalMb:8192,temp:46,clockMHz:210,fan:32,powerW:28,name:'NVIDIA GeForce RTX 4060',diskTotalGb:1024}};
     function seedDemo(){
       D.cores=navigator.hardwareConcurrency||8;D.cpuCore=[];
       for(var i=0;i<D.cores;i++)D.cpuCore.push(20+Math.random()*15);
@@ -449,7 +450,7 @@
       stepDemo();
       return {hostname:'LOCAL-WORKSTATION',uptime:D.up,cores:D.cores,load:+D.load.toFixed(2),
         cpu:+D.cpu.toFixed(1),mem:+D.mem.toFixed(1),memUsedGb:+(D.mem/100*32).toFixed(1),memTotalGb:32,
-        disk:+D.disk.toFixed(1),diskR:+D.diskR.toFixed(1),diskW:+D.diskW.toFixed(1),
+        disk:+D.disk.toFixed(1),diskR:+D.diskR.toFixed(1),diskW:+D.diskW.toFixed(1),diskTotalGb:D.diskTotalGb,diskUsedGb:+(D.disk/100*D.diskTotalGb).toFixed(1),diskFreeGb:+(D.diskTotalGb-D.disk/100*D.diskTotalGb).toFixed(1),
         netRx:+D.netIn.toFixed(1),netTx:+D.netOut.toFixed(1),temp:+D.temp.toFixed(1),procs:D.procs,
         perCpu:D.cpuCore.map(function(v){return +v.toFixed(1);}),
         topProc:[{name:'chrome',cpu:18.2,memMb:1420},{name:'node',cpu:9.6,memMb:860},{name:'code',cpu:6.4,memMb:1120},{name:'python3',cpu:4.1,memMb:310},{name:'sshd',cpu:1.2,memMb:44}],
@@ -684,8 +685,9 @@
     function updInfo(d){
       setInfo('fMemInfo',[['已用内存',d.memUsedGb.toFixed(1)+'<small>GB</small>'],['总内存',d.memTotalGb.toFixed(1)+'<small>GB</small>'],
         ['使用率',d.mem.toFixed(1)+'<small>%</small>'],['空闲',Math.max(0,d.memTotalGb-d.memUsedGb).toFixed(1)+'<small>GB</small>'],['进程数',d.procs]]);
-      setInfo('fDiskInfo',[['磁盘使用率',d.disk.toFixed(1)+'<small>%</small>'],['读取',d.diskR.toFixed(0)+'<small>MB/s</small>'],
-        ['写入',d.diskW.toFixed(0)+'<small>MB/s</small>'],['温度',d.temp.toFixed(1)+'<small>°C</small>']]);
+      setInfo('fDiskInfo',[['磁盘使用率',d.disk.toFixed(1)+'<small>%</small>'],['总容量',fmtGB(d.diskTotalGb||0)],
+        ['已用',fmtGB(d.diskUsedGb||0)],['可用',fmtGB(d.diskFreeGb||0)],
+        ['读取',d.diskR.toFixed(0)+'<small>MB/s</small>'],['写入',d.diskW.toFixed(0)+'<small>MB/s</small>'],['温度',d.temp.toFixed(1)+'<small>°C</small>']]);
       setInfo('fNetInfo',[['下行',d.netRx.toFixed(1)+'<small>M/s</small>'],['上行',d.netTx.toFixed(1)+'<small>M/s</small>'],
         ['数据源',S.mode==='live'?'实时':'演示'],['状态',S.paused?'已暂停':'采集中']]);
     }

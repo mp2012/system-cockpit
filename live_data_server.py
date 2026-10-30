@@ -92,10 +92,15 @@ def _collect():
             disk_w = (disk.write_bytes - _last_disk[2]) / dt / 1e6
     _last_disk = (now, disk.read_bytes if disk else 0, disk.write_bytes if disk else 0)
 
-    # 系统盘使用率（跨平台：取用户主目录所在分区，避免 Windows 下 "/" 语义歧义）
+    # 系统盘使用率与容量（跨平台：取用户主目录所在分区，避免 Windows 下 "/" 语义歧义）
     disk_usage = 0.0
+    disk_total_gb = disk_used_gb = disk_free_gb = 0.0
     try:
-        disk_usage = psutil.disk_usage(os.path.expanduser("~")).percent
+        du = psutil.disk_usage(os.path.expanduser("~"))
+        disk_usage = du.percent
+        disk_total_gb = round(du.total / 1073741824, 1)
+        disk_used_gb = round(du.used / 1073741824, 1)
+        disk_free_gb = round(du.free / 1073741824, 1)
     except Exception:
         pass
 
@@ -147,6 +152,9 @@ def _collect():
         "disk": round(disk_usage, 1),
         "diskR": round(disk_r, 1),
         "diskW": round(disk_w, 1),
+        "diskTotalGb": disk_total_gb,
+        "diskUsedGb": disk_used_gb,
+        "diskFreeGb": disk_free_gb,
         "netRx": round(net_rx, 1),
         "netTx": round(net_tx, 1),
         "temp": round(temp_c, 1),
