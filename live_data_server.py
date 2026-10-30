@@ -132,7 +132,7 @@ def _collect():
     except Exception:
         pass
 
-    mem_used_gb = round((mem.used - mem.available + mem.available - mem.free) / 1073741824, 1) if False else round((mem.total - mem.available) / 1073741824, 1)
+    mem_used_gb = round((mem.total - mem.available) / 1073741824, 1)
     mem_total_gb = round(mem.total / 1073741824, 1)
 
     return {

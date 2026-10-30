@@ -150,6 +150,9 @@
     gap:clamp(6px,0.9vw,10px);
   }
   .gauges{grid-column:1/-1;display:grid;grid-template-columns:repeat(4,1fr);gap:clamp(6px,0.9vw,10px);min-height:0}
+  .gauges .gauge-card.gpu{display:none}
+  .gauges.show-gpu{grid-template-columns:repeat(5,1fr)}
+  .gauges.show-gpu .gauge-card.gpu{display:block}
   .left{grid-column:1;display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;gap:clamp(6px,0.9vw,10px);min-height:0}
   .right{grid-column:2;display:grid;grid-template-rows:1fr 1fr 1.1fr;gap:clamp(6px,0.9vw,10px);min-height:0}
 
@@ -251,6 +254,7 @@
     .stage{overflow:visible}
     .overview{grid-template-columns:1fr;grid-template-rows:none}
     .gauges{grid-template-columns:repeat(2,1fr)}
+    .gauges.show-gpu{grid-template-columns:repeat(3,1fr)}
     .left{grid-column:1;grid-template-columns:1fr}
     .right{grid-column:1;grid-template-rows:none}
     .panel{min-height:200px}
@@ -278,6 +282,7 @@
     .overview{grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);grid-template-rows:auto minmax(0,1fr);gap:4px}
     .gauges{grid-column:1/-1}
     .gauges{grid-template-columns:repeat(4,minmax(0,1fr));gap:4px}
+    .gauges.show-gpu{grid-template-columns:repeat(5,minmax(0,1fr));gap:4px}
     .left{grid-column:1;grid-template-columns:repeat(2,minmax(0,1fr));grid-template-rows:repeat(2,minmax(0,1fr));gap:4px}
     .right{grid-column:2;grid-template-rows:repeat(3,minmax(0,1fr));gap:4px}
     .panel{min-height:0;padding:4px}
@@ -308,6 +313,7 @@
     .strip .chip:first-child .v{font-size:7px}
     .overview{grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);grid-template-rows:auto minmax(0,1fr)}
     .gauges{grid-column:1/-1;grid-template-columns:repeat(4,minmax(0,1fr));align-items:center}
+    .gauges.show-gpu{grid-template-columns:repeat(5,minmax(0,1fr));align-items:center}
     .left{display:grid;grid-column:1;grid-template-columns:repeat(2,minmax(0,1fr));grid-template-rows:repeat(2,minmax(0,1fr))}
     .right{display:grid;grid-column:2;grid-template-rows:repeat(3,minmax(0,1fr))}
     .panel h3{font-size:8px;letter-spacing:0;margin:0 1px 1px}
@@ -360,7 +366,7 @@
 
     <main class="stage" id="stage">
       <div class="view active overview" data-view="overview">
-        <section class="gauges">
+        <section class="gauges" id="gauges">
           <div class="panel gauge-card"><div class="corner tl"></div><div class="corner tr"></div><div class="corner bl"></div><div class="corner br"></div><h3><svg viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="2"/><path d="M9 1v3M15 1v3M9 20v3M15 20v3M1 9h3M1 15h3M20 9h3M20 15h3"/><rect x="9.5" y="9.5" width="5" height="5" rx="1"/></svg><span class="dot"></span>CPU 使用率</h3><div class="gauge-wrap"><div class="chart-box" id="gCpu"></div><div class="gval" id="gvCpu">0<small>%</small></div></div><div class="gsub" id="gsCpu">温度 0.0°</div></div>
           <div class="panel gauge-card"><div class="corner tl"></div><div class="corner tr"></div><div class="corner bl"></div><div class="corner br"></div><h3><svg viewBox="0 0 24 24"><rect x="3" y="7" width="18" height="10" rx="2"/><path d="M7 7v10M11 7v10M15 7v10M19 7v10"/></svg><span class="dot"></span>内存使用率</h3><div class="gauge-wrap"><div class="chart-box" id="gMem"></div><div class="gval" id="gvMem">0<small>%</small></div></div><div class="gsub" id="gsMem">0 / 0 GB</div></div>
           <div class="panel gauge-card"><div class="corner tl"></div><div class="corner tr"></div><div class="corner bl"></div><div class="corner br"></div><h3><svg viewBox="0 0 24 24"><path d="M5 4h11l3 3v13H5z"/><path d="M8 4v5h7V4M8 20v-6h8v6"/></svg><span class="dot"></span>磁盘负载</h3><div class="gauge-wrap"><div class="chart-box" id="gDisk"></div><div class="gval" id="gvDisk">0<small>%</small></div></div><div class="gsub" id="gsDisk">R 0 · W 0</div></div>
@@ -498,7 +504,7 @@
       detail:{show:false},data:[{value:0}]};}
     function initCharts(){
       if(typeof echarts==='undefined'){document.getElementById('bootS').textContent='图表引擎加载失败，仅显示数值';return;}
-      ['gCpu','gMem','gDisk','gNet'].forEach(function(id){
+      ['gCpu','gMem','gDisk','gNet','gGpu'].forEach(function(id){
         var c=echarts.init($(id));c.setOption({series:[gaugeEl()]});charts[id]=c;
       });
       ['cCpu','cMem','cNet','cDisk','radar','cLoad'].forEach(function(id){
@@ -687,6 +693,14 @@
       if(!(d.gpu&&d.gpu.util!=null)&&S.mode!=='live')d.gpu=gpuData();
       var gpuAvailable=!!(d.gpu&&d.gpu.util!=null);
       setGpuAvailability(gpuAvailable);
+      var gaugesEl=$('gauges');
+      if(gaugesEl){
+        gaugesEl.classList.toggle('show-gpu',gpuAvailable);
+        if(gpuAvailable){
+          updGauge('gGpu',$('gvGpu'),$('gsGpu'),d.gpu.util,'%','显存 '+(d.gpu.memUsedMb/1024).toFixed(1)+' / '+(d.gpu.memTotalMb/1024).toFixed(1)+' GB',lvl(d.gpu.util),100);
+          if(!S._gpuShown){S._gpuShown=true;setTimeout(function(){if(charts.gGpu)charts.gGpu.resize();},20);}
+        }else{S._gpuShown=false;}
+      }
       renderStrip(d);
       updGauge('gCpu',$('gvCpu'),$('gsCpu'),d.cpu,'%','温度 '+d.temp.toFixed(1)+'°C',lvl(d.cpu),100);
       updGauge('gMem',$('gvMem'),$('gsMem'),d.mem,'%',d.memUsedGb+' / '+d.memTotalGb+' GB',lvl(d.mem),100);
@@ -738,8 +752,18 @@
       stage.insertAdjacentHTML('beforeend',
         '<div class="view focus v-gpu" data-view="gpu">'
         +focusPanel('GPU 利用率','fGpuUtil')+focusPanel('显存占用','fGpuMem')
-        +focusPanel('利用率 / 温度趋势','fGpuTrend')+focusPanel('GPU 明细',null,'fGpuInfo')
+        +focusPanel('利用率 / 温度趋势','fGpuTrend')        +focusPanel('GPU 明细',null,'fGpuInfo')
         +'</div>');
+    }
+    function ensureGpuGaugeCard(){
+      var g=document.querySelector('.gauges');if(!g||g.querySelector('#gGpu'))return;
+      var card=document.createElement('div');
+      card.className='panel gauge-card gpu';
+      card.innerHTML='<div class="corner tl"></div><div class="corner tr"></div><div class="corner bl"></div><div class="corner br"></div>'
+        +'<h3>'+GPU_ICON+'<span class="dot"></span>GPU 利用率</h3>'
+        +'<div class="gauge-wrap"><div class="chart-box" id="gGpu"></div><div class="gval" id="gvGpu">0<small>%</small></div></div>'
+        +'<div class="gsub" id="gsGpu">显存 0 / 0 GB</div>';
+      g.appendChild(card);
     }
     function wireTabs(){
       var tabs=document.querySelectorAll('.tab');
@@ -791,6 +815,7 @@
 
     /* ---------- 启动 ---------- */
     buildFocusViews();
+    ensureGpuGaugeCard();
     wireTabs();
     seedDemo();
     clock();setInterval(clock,1000);

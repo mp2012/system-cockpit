@@ -27,7 +27,7 @@
     "asar": true,
     "files": [
       "electron/**/*",
-      "ç³»ç»Ÿæ•°æ®é©¾é©¶èˆ±.html",
+      "系统数据驾驶舱.html",
       "echarts.min.js",
       "fonts/**/*",
       "package.json"
