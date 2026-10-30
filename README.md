@@ -13,15 +13,35 @@
 
 ## 界面预览
 
+### 总览（单屏）
 ![系统数据驾驶舱 - 总览](assets/shots/shot1.png)
 
-### 更多界面
+横屏单屏：CPU / 内存 / 磁盘 / 网络 四大仪表盘 + 负载趋势 + 系统负载雷达 + 核心占用 + TOP 进程。检测到 NVIDIA 显卡时自动显示第五张 GPU 利用率卡（无 GPU 时保持四卡不变）。
 
-| | |
-|---|---|
-| ![总览](assets/shots/shot1.png) | ![CPU 详情](assets/shots/shot2.png) |
-| ![内存详情](assets/shots/shot3.png) | ![磁盘详情](assets/shots/shot4.png) |
-| ![网络详情](assets/shots/shot5.png) | ![显卡详情](assets/shots/shot6.png) |
+### CPU 详情
+![CPU 详情](assets/shots/shot2.png)
+
+各核心占用率、历史趋势、各核心负载热力图、进程 CPU 占用 Top5。
+
+### 内存详情
+![内存详情](assets/shots/shot3.png)
+
+占用趋势、已用/空闲环形图、进程内存占用 Top5、内存明细。
+
+### 磁盘详情
+![磁盘详情](assets/shots/shot4.png)
+
+使用率仪表、读写速率趋势、当前读写柱状图、磁盘明细（总容量 / 已用 / 可用）。
+
+### 网络详情
+![网络详情](assets/shots/shot5.png)
+
+吞吐趋势、流量分布环形图、当前速率、网络明细。
+
+### 显卡详情
+![显卡详情](assets/shots/shot6.png)
+
+GPU 利用率仪表、显存占用环形图、利用率/温度趋势、GPU 明细。
 
 ---
 
